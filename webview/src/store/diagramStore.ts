@@ -1,0 +1,485 @@
+import { create } from 'zustand';
+import { temporal } from 'zundo';
+import {
+  DiagramModel, Table, Column, Relation, DictionaryEntry,
+  createEmptyModel, TableLayout, RegionLayout, CommentLayout,
+  TableIndex, TableConstraint, ConstraintType,
+} from '@shared/DiagramModel';
+import { genId } from '../util/idgen';
+import { computeAutoLayout, LayoutDirection, TablePosition } from '../util/autoLayout';
+import type { ParsedTableImport, ParsedDictionaryImport } from '../util/csvImport';
+
+
+interface DiagramState {
+  model: DiagramModel;
+  saveVersion: number;
+
+  setModel: (model: DiagramModel) => void;
+
+  addTable: (x: number, y: number) => void;
+  updateTable: (tableId: string, patch: Partial<Pick<Table, 'logicalName' | 'physicalName' | 'comment' | 'designNote' | 'headerColor' | 'status'>>) => void;
+  updateSeedData: (tableId: string, seedData: Record<string, string>[]) => void;
+  deleteTable: (tableId: string) => void;
+
+  addColumn: (tableId: string) => void;
+  updateColumn: (tableId: string, columnId: string, patch: Partial<Column>) => void;
+  deleteColumn: (tableId: string, columnId: string) => void;
+  reorderColumns: (tableId: string, fromIndex: number, toIndex: number) => void;
+
+  addRelation: (rel: Omit<Relation, 'id'>) => void;
+  updateRelation: (relationId: string, patch: Partial<Omit<Relation, 'id'>>) => void;
+  deleteRelation: (relationId: string) => void;
+
+  updateLayout: (tableId: string, x: number, y: number, width: number) => void;
+  updateViewport: (x: number, y: number, zoom: number) => void;
+  setNameMode: (mode: 'logical' | 'physical') => void;
+
+  addDictionaryEntry: (entry: Omit<DictionaryEntry, 'id'>) => void;
+  updateDictionaryEntry: (id: string, patch: Partial<Omit<DictionaryEntry, 'id'>>) => void;
+  deleteDictionaryEntry: (id: string) => void;
+
+  applyAutoLayout: (direction: LayoutDirection) => void;
+
+  addRegion: (x: number, y: number) => void;
+  updateRegion: (id: string, patch: Partial<Omit<RegionLayout, 'id' | 'x' | 'y' | 'width' | 'height'>>) => void;
+  deleteRegion: (id: string) => void;
+  updateRegionLayout: (id: string, x: number, y: number, width: number, height: number) => void;
+
+  importTables: (parsed: ParsedTableImport) => void;
+  importDictionaryEntries: (parsed: ParsedDictionaryImport) => void;
+  addColumnType: (tableId: string, columnId: string, entry: Omit<DictionaryEntry, 'id'>) => void;
+
+  addComment: (x: number, y: number, style?: { fontSize?: number; fontFamily?: string; textColor?: string; bgColor?: string }) => void;
+  updateComment: (id: string, patch: Partial<Pick<CommentLayout, 'text' | 'textColor' | 'bgColor' | 'fontSize' | 'fontFamily'>>) => void;
+  deleteComment: (id: string) => void;
+  updateCommentLayout: (id: string, x: number, y: number) => void;
+
+  addIndex: (tableId: string) => void;
+  updateIndex: (tableId: string, indexId: string, patch: Partial<Omit<TableIndex, 'id'>>) => void;
+  deleteIndex: (tableId: string, indexId: string) => void;
+
+  addConstraint: (tableId: string, type: ConstraintType) => void;
+  updateConstraint: (tableId: string, constraintId: string, patch: Partial<Omit<TableConstraint, 'id'>>) => void;
+  deleteConstraint: (tableId: string, constraintId: string) => void;
+}
+
+function nextVersion(state: DiagramState): number {
+  return state.saveVersion + 1;
+}
+
+function updateModel(
+  set: (fn: (s: DiagramState) => Partial<DiagramState>) => void,
+  updater: (model: DiagramModel) => DiagramModel
+) {
+  set((state) => ({
+    model: updater(state.model),
+    saveVersion: nextVersion(state),
+  }));
+}
+
+export const useDiagramStore = create<DiagramState>()(
+  temporal(
+    (set) => ({
+      model: createEmptyModel(),
+      saveVersion: 0,
+
+      setModel: (model) => set({ model, saveVersion: 0 }),
+
+      addTable: (x, y) =>
+        updateModel(set, (m) => {
+          const id = genId('tbl');
+          const newTable: Table = {
+            id,
+            logicalName: 'New Table',
+            physicalName: 'new_table',
+            comment: '',
+            columns: [],
+          };
+          const layout: TableLayout = { tableId: id, x, y, width: 240 };
+          return {
+            ...m,
+            tables: [...m.tables, newTable],
+            layout: { ...m.layout, tables: [...m.layout.tables, layout] },
+          };
+        }),
+
+      updateTable: (tableId, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) => {
+            if (t.id !== tableId) return t;
+            const updated = { ...t, ...patch };
+            // Propagate status change to all columns
+            if (patch.status !== undefined) {
+              updated.columns = t.columns.map((c) => ({ ...c, status: patch.status }));
+            }
+            return updated;
+          }),
+        })),
+
+      updateSeedData: (tableId, seedData) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, seedData: seedData.length > 0 ? seedData : undefined }
+              : t
+          ),
+        })),
+
+      deleteTable: (tableId) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.filter((t) => t.id !== tableId),
+          relations: m.relations.filter(
+            (r) => r.fromTableId !== tableId && r.toTableId !== tableId
+          ),
+          layout: {
+            ...m.layout,
+            tables: m.layout.tables.filter((l) => l.tableId !== tableId),
+          },
+        })),
+
+      addColumn: (tableId) =>
+        updateModel(set, (m) => {
+          const colId = genId('col');
+          const newCol: Column = {
+            id: colId,
+            logicalName: 'Column',
+            physicalName: 'column',
+            dictionaryId: m.dictionary[0]?.id ?? '',
+            isPrimaryKey: false,
+            isNullable: true,
+            defaultValue: null,
+            comment: '',
+          };
+          return {
+            ...m,
+            tables: m.tables.map((t) =>
+              t.id === tableId ? { ...t, columns: [...t.columns, newCol] } : t
+            ),
+          };
+        }),
+
+      updateColumn: (tableId, columnId, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? {
+                  ...t,
+                  columns: t.columns.map((c) =>
+                    c.id === columnId ? { ...c, ...patch } : c
+                  ),
+                }
+              : t
+          ),
+        })),
+
+      deleteColumn: (tableId, columnId) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, columns: t.columns.filter((c) => c.id !== columnId) }
+              : t
+          ),
+        })),
+
+      reorderColumns: (tableId, fromIndex, toIndex) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) => {
+            if (t.id !== tableId) return t;
+            const cols = [...t.columns];
+            const [moved] = cols.splice(fromIndex, 1);
+            cols.splice(toIndex, 0, moved);
+            return { ...t, columns: cols };
+          }),
+        })),
+
+      addRelation: (rel) =>
+        updateModel(set, (m) => ({
+          ...m,
+          relations: [...m.relations, { ...rel, id: genId('rel') }],
+        })),
+
+      updateRelation: (relationId, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          relations: m.relations.map((r) =>
+            r.id === relationId ? { ...r, ...patch } : r
+          ),
+        })),
+
+      deleteRelation: (relationId) =>
+        updateModel(set, (m) => ({
+          ...m,
+          relations: m.relations.filter((r) => r.id !== relationId),
+        })),
+
+      updateLayout: (tableId, x, y, width) =>
+        set((state) => ({
+          model: {
+            ...state.model,
+            layout: {
+              ...state.model.layout,
+              tables: state.model.layout.tables.map((l) =>
+                l.tableId === tableId ? { ...l, x, y, width } : l
+              ),
+            },
+          },
+          saveVersion: nextVersion(state),
+        })),
+
+      updateViewport: (x, y, zoom) =>
+        set((state) => ({
+          model: {
+            ...state.model,
+            layout: { ...state.model.layout, viewport: { x, y, zoom } },
+          },
+          saveVersion: nextVersion(state),
+        })),
+
+      setNameMode: (mode) =>
+        updateModel(set, (m) => ({
+          ...m,
+          layout: { ...m.layout, nameMode: mode },
+        })),
+
+      addDictionaryEntry: (entry) =>
+        updateModel(set, (m) => ({
+          ...m,
+          dictionary: [...m.dictionary, { ...entry, id: genId('dict') }],
+        })),
+
+      updateDictionaryEntry: (id, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          dictionary: m.dictionary.map((e) =>
+            e.id === id ? { ...e, ...patch } : e
+          ),
+        })),
+
+      deleteDictionaryEntry: (id) =>
+        updateModel(set, (m) => ({
+          ...m,
+          dictionary: m.dictionary.filter((e) => e.id !== id),
+        })),
+
+      applyAutoLayout: (direction) =>
+        updateModel(set, (m) => {
+          const positions: TablePosition[] = computeAutoLayout(m, direction);
+          return {
+            ...m,
+            layout: {
+              ...m.layout,
+              tables: m.layout.tables.map((l) => {
+                const pos = positions.find((p) => p.tableId === l.tableId);
+                return pos ? { ...l, x: pos.x, y: pos.y, width: pos.width } : l;
+              }),
+            },
+          };
+        }),
+
+      addRegion: (x, y) =>
+        updateModel(set, (m) => {
+          const id = genId('rgn');
+          const region: RegionLayout = { id, label: 'Region', x, y, width: 400, height: 300 };
+          return {
+            ...m,
+            layout: { ...m.layout, regions: [...m.layout.regions, region] },
+          };
+        }),
+
+      updateRegion: (id, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          layout: {
+            ...m.layout,
+            regions: m.layout.regions.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+          },
+        })),
+
+      deleteRegion: (id) =>
+        updateModel(set, (m) => ({
+          ...m,
+          layout: {
+            ...m.layout,
+            regions: m.layout.regions.filter((r) => r.id !== id),
+          },
+        })),
+
+      updateRegionLayout: (id, x, y, width, height) =>
+        set((state) => ({
+          model: {
+            ...state.model,
+            layout: {
+              ...state.model.layout,
+              regions: state.model.layout.regions.map((r) =>
+                r.id === id ? { ...r, x, y, width, height } : r
+              ),
+            },
+          },
+          saveVersion: nextVersion(state),
+        })),
+
+      addComment: (x, y, style) =>
+        updateModel(set, (m) => {
+          const id = genId('cmt');
+          const comment: CommentLayout = { id, text: '', x, y, ...style };
+          return {
+            ...m,
+            layout: { ...m.layout, comments: [...(m.layout.comments ?? []), comment] },
+          };
+        }),
+
+      updateComment: (id, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          layout: {
+            ...m.layout,
+            comments: (m.layout.comments ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c)),
+          },
+        })),
+
+      deleteComment: (id) =>
+        updateModel(set, (m) => ({
+          ...m,
+          layout: {
+            ...m.layout,
+            comments: (m.layout.comments ?? []).filter((c) => c.id !== id),
+          },
+        })),
+
+      updateCommentLayout: (id, x, y) =>
+        set((state) => ({
+          model: {
+            ...state.model,
+            layout: {
+              ...state.model.layout,
+              comments: (state.model.layout.comments ?? []).map((c) =>
+                c.id === id ? { ...c, x, y } : c
+              ),
+            },
+          },
+          saveVersion: nextVersion(state),
+        })),
+
+      importTables: ({ tables, relations, autoCreatedDictEntries }) =>
+        updateModel(set, (m) => {
+          const GRID_COLS = 4;
+          const STEP_X = 280;
+          const STEP_Y = 200;
+          const startX = 60;
+          const startY = 60 + m.layout.tables.length * 10;
+          const newLayouts: TableLayout[] = tables.map((t, i) => ({
+            tableId: t.id,
+            x: startX + (i % GRID_COLS) * STEP_X,
+            y: startY + Math.floor(i / GRID_COLS) * STEP_Y,
+            width: 260,
+          }));
+          return {
+            ...m,
+            dictionary: [...m.dictionary, ...autoCreatedDictEntries],
+            tables: [...m.tables, ...tables],
+            relations: [...m.relations, ...(relations ?? [])],
+            layout: {
+              ...m.layout,
+              tables: [...m.layout.tables, ...newLayouts],
+            },
+          };
+        }),
+
+      importDictionaryEntries: ({ entries }) =>
+        updateModel(set, (m) => ({
+          ...m,
+          dictionary: [...m.dictionary, ...entries],
+        })),
+
+      addColumnType: (tableId, columnId, entry) =>
+        updateModel(set, (m) => {
+          const dictEntry: DictionaryEntry = { ...entry, id: genId('dict') };
+          return {
+            ...m,
+            dictionary: [...m.dictionary, dictEntry],
+            tables: m.tables.map((t) =>
+              t.id === tableId
+                ? {
+                    ...t,
+                    columns: t.columns.map((c) =>
+                      c.id === columnId ? { ...c, dictionaryId: dictEntry.id } : c
+                    ),
+                  }
+                : t
+            ),
+          };
+        }),
+
+      addIndex: (tableId) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, indexes: [...(t.indexes ?? []), { id: genId('idx'), name: '', columns: [], unique: false }] }
+              : t
+          ),
+        })),
+
+      updateIndex: (tableId, indexId, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, indexes: (t.indexes ?? []).map((i) => i.id === indexId ? { ...i, ...patch } : i) }
+              : t
+          ),
+        })),
+
+      deleteIndex: (tableId, indexId) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, indexes: (t.indexes ?? []).filter((i) => i.id !== indexId) || undefined }
+              : t
+          ),
+        })),
+
+      addConstraint: (tableId, type) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, constraints: [...(t.constraints ?? []), { id: genId('cst'), type, name: '', expression: '' }] }
+              : t
+          ),
+        })),
+
+      updateConstraint: (tableId, constraintId, patch) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, constraints: (t.constraints ?? []).map((c) => c.id === constraintId ? { ...c, ...patch } : c) }
+              : t
+          ),
+        })),
+
+      deleteConstraint: (tableId, constraintId) =>
+        updateModel(set, (m) => ({
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === tableId
+              ? { ...t, constraints: (t.constraints ?? []).filter((c) => c.id !== constraintId) || undefined }
+              : t
+          ),
+        })),
+    }),
+    {
+      limit: 100,
+      // Exclude saveVersion from undo history — only track model changes
+      partialize: (state) => ({ model: state.model }),
+    }
+  )
+);

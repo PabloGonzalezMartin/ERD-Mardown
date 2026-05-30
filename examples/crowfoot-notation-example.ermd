@@ -1,0 +1,901 @@
+---
+er-diagram: true
+version: 1
+---
+
+# crowfoot-notation-example
+
+## Dictionary
+
+```ermd-dictionary
+- id: dict_mpr5gt92_d2dmc
+  name: VARCHAR(255)
+  dbType: VARCHAR
+  length: 255
+  notNull: true
+  comment: ''
+- id: dict_mpr5gt92_6wy7e
+  name: VARCHAR(255) NULL
+  dbType: VARCHAR
+  length: 255
+  notNull: false
+  comment: ''
+- id: dict_mpr5gt92_oihi9
+  name: VARCHAR(10) NULL
+  dbType: VARCHAR
+  length: 10
+  notNull: false
+  comment: ''
+- id: dict_mpr5gt92_6dtf0
+  name: DECIMAL(19) NULL
+  dbType: DECIMAL
+  length: 19
+  notNull: false
+  comment: ''
+- id: dict_mpr5gt92_uswaw
+  name: VARCHAR(10)
+  dbType: VARCHAR
+  length: 10
+  notNull: true
+  comment: ''
+```
+
+## Tables
+
+```ermd-table
+id: tbl_mpr5gt92_sxu1f
+logicalName: Author
+physicalName: Author
+comment: Stores book authors
+designNote: Author and Address together form the composite PK
+columns:
+  - id: col_mpr5gt92_7uj2p
+    logicalName: Name
+    physicalName: Name
+    dictionaryId: dict_mpr5gt92_d2dmc
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Author full name
+  - id: col_mpr5gt92_g67qu
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpr5gt92_d2dmc
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Author postal address
+    designNote: Part of composite PK
+  - id: col_mpr5gt92_y2cfp
+    logicalName: URL
+    physicalName: URL
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Author website URL
+```
+
+```ermd-table
+id: tbl_mpr5gt92_y4im7
+logicalName: Publisher
+physicalName: Publisher
+comment: Stores book publishers
+columns:
+  - id: col_mpr5gt92_v81q0
+    logicalName: Name
+    physicalName: Name
+    dictionaryId: dict_mpr5gt92_d2dmc
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Publisher name (PK)
+  - id: col_mpr5gt92_ez6fs
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Publisher address
+  - id: col_mpr5gt92_bk1ep
+    logicalName: Phone
+    physicalName: Phone
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Publisher phone number
+  - id: col_mpr5gt92_w7w79
+    logicalName: URL
+    physicalName: URL
+    dictionaryId: dict_mpr5gt92_oihi9
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Publisher URL / web reference
+```
+
+```ermd-table
+id: tbl_mpr5gt92_kbf3b
+logicalName: Book
+physicalName: Book
+comment: Central entity — a book title
+columns:
+  - id: col_mpr5gt92_82rsa
+    logicalName: ISBN
+    physicalName: ISBN
+    dictionaryId: dict_mpr5gt92_d2dmc
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: International Standard Book Number (PK)
+  - id: col_mpr5gt92_yc75g
+    logicalName: PublisherName
+    physicalName: PublisherName
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK reference to Publisher.Name
+  - id: col_mpr5gt92_qbgqf
+    logicalName: AuthorName
+    physicalName: AuthorName
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK reference to Author.Name
+  - id: col_mpr5gt92_h1de0
+    logicalName: AuthorAddress
+    physicalName: AuthorAddress
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK reference to Author.Address
+  - id: col_mpr5gt92_6cksa
+    logicalName: Year
+    physicalName: Year
+    dictionaryId: dict_mpr5gt92_oihi9
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Year of publication
+  - id: col_mpr5gt92_fuhh4
+    logicalName: Title
+    physicalName: Title
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Book title
+  - id: col_mpr5gt92_laml5
+    logicalName: Price
+    physicalName: Price
+    dictionaryId: dict_mpr5gt92_6dtf0
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Cover price (numeric 19
+    designNote: 0)
+```
+
+```ermd-table
+id: tbl_mpr5gt92_w90yd
+logicalName: Customer
+physicalName: Customer
+comment: Registered customers
+columns:
+  - id: col_mpr5gt92_ybdjh
+    logicalName: Email
+    physicalName: Email
+    dictionaryId: dict_mpr5gt92_d2dmc
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Customer email address (PK)
+  - id: col_mpr5gt92_km8cf
+    logicalName: Name
+    physicalName: Name
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Customer full name
+  - id: col_mpr5gt92_nyrui
+    logicalName: Phone
+    physicalName: Phone
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Contact phone
+  - id: col_mpr5gt92_xcr7y
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Shipping address
+```
+
+```ermd-table
+id: tbl_mpr5gt92_7uz0i
+logicalName: ShoppingBasket
+physicalName: ShoppingBasket
+comment: A customer's shopping basket
+columns:
+  - id: col_mpr5gt92_p6rpq
+    logicalName: ID
+    physicalName: ID
+    dictionaryId: dict_mpr5gt92_uswaw
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Basket surrogate key (PK)
+  - id: col_mpr5gt92_h1yng
+    logicalName: CustomerEmail
+    physicalName: CustomerEmail
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK to Customer.Email
+```
+
+```ermd-table
+id: tbl_mpr5gt92_bm6ms
+logicalName: ShoppingBasket_Book
+physicalName: ShoppingBasket_Book
+comment: Junction between basket and book
+columns:
+  - id: col_mpr5gt92_aakpr
+    logicalName: ShoppingBasketID
+    physicalName: ShoppingBasketID
+    dictionaryId: dict_mpr5gt92_uswaw
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to ShoppingBasket.ID (composite PK)
+  - id: col_mpr5gt92_jvs5e
+    logicalName: BookISBN
+    physicalName: BookISBN
+    dictionaryId: dict_mpr5gt92_d2dmc
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to Book.ISBN (composite PK)
+  - id: col_mpr5gt92_os1e0
+    logicalName: Count
+    physicalName: Count
+    dictionaryId: dict_mpr5gt92_oihi9
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Number of copies of this book in the basket
+```
+
+```ermd-table
+id: tbl_mpr5gt92_iazpf
+logicalName: Warehouse
+physicalName: Warehouse
+comment: Physical warehouse locations
+columns:
+  - id: col_mpr5gt92_i6gtz
+    logicalName: Code
+    physicalName: Code
+    dictionaryId: dict_mpr5gt92_uswaw
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Warehouse code (PK)
+  - id: col_mpr5gt92_6e8nl
+    logicalName: Phone
+    physicalName: Phone
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Warehouse contact phone
+  - id: col_mpr5gt92_q0w8a
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpr5gt92_6wy7e
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Warehouse physical address
+```
+
+```ermd-table
+id: tbl_mpr5gt92_5mv19
+logicalName: Warehouse_Book
+physicalName: Warehouse_Book
+comment: Stock of a book in a warehouse
+columns:
+  - id: col_mpr5gt92_q9mg2
+    logicalName: WarehouseCode
+    physicalName: WarehouseCode
+    dictionaryId: dict_mpr5gt92_uswaw
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to Warehouse.Code (composite PK)
+  - id: col_mpr5gt92_gjurr
+    logicalName: BookISBN
+    physicalName: BookISBN
+    dictionaryId: dict_mpr5gt92_d2dmc
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to Book.ISBN (composite PK)
+  - id: col_mpr5gt92_5q9kh
+    logicalName: Count
+    physicalName: Count
+    dictionaryId: dict_mpr5gt92_oihi9
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Number of copies in stock
+```
+
+## Relations
+
+```ermd-relations
+- id: rel_mpr5gt92_c4alj
+  fromTableId: tbl_mpr5gt92_sxu1f
+  fromColumnId: col_mpr5gt92_7uj2p
+  toTableId: tbl_mpr5gt92_kbf3b
+  toColumnId: col_mpr5gt92_qbgqf
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_book_author_name
+  comment: 'Non-identifying: Author may exist without Books'
+- id: rel_mpr5gt92_vnx8k
+  fromTableId: tbl_mpr5gt92_y4im7
+  fromColumnId: col_mpr5gt92_v81q0
+  toTableId: tbl_mpr5gt92_kbf3b
+  toColumnId: col_mpr5gt92_yc75g
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_book_publisher_name
+  comment: 'Non-identifying: Publisher may exist without Books'
+- id: rel_mpr5gt92_enf3p
+  fromTableId: tbl_mpr5gt92_kbf3b
+  fromColumnId: col_mpr5gt92_82rsa
+  toTableId: tbl_mpr5gt92_bm6ms
+  toColumnId: col_mpr5gt92_jvs5e
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_sbb_book_isbn
+  comment: 'Identifying: ShoppingBasket_Book depends on Book'
+- id: rel_mpr5gt92_1o04t
+  fromTableId: tbl_mpr5gt92_kbf3b
+  fromColumnId: col_mpr5gt92_82rsa
+  toTableId: tbl_mpr5gt92_5mv19
+  toColumnId: col_mpr5gt92_gjurr
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_wb_book_isbn
+  comment: 'Identifying: Warehouse_Book depends on Book'
+- id: rel_mpr5gt92_jefw4
+  fromTableId: tbl_mpr5gt92_w90yd
+  fromColumnId: col_mpr5gt92_ybdjh
+  toTableId: tbl_mpr5gt92_7uz0i
+  toColumnId: col_mpr5gt92_h1yng
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_basket_customer_email
+  comment: 'Non-identifying: Customer may exist without a basket'
+- id: rel_mpr5gt93_he8g6
+  fromTableId: tbl_mpr5gt92_7uz0i
+  fromColumnId: col_mpr5gt92_p6rpq
+  toTableId: tbl_mpr5gt92_bm6ms
+  toColumnId: col_mpr5gt92_aakpr
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_sbb_basket_id
+  comment: 'Identifying: ShoppingBasket_Book depends on ShoppingBasket'
+- id: rel_mpr5gt93_n24oa
+  fromTableId: tbl_mpr5gt92_iazpf
+  fromColumnId: col_mpr5gt92_i6gtz
+  toTableId: tbl_mpr5gt92_5mv19
+  toColumnId: col_mpr5gt92_q9mg2
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_wb_warehouse_code
+  comment: 'Identifying: Warehouse_Book depends on Warehouse'
+```
+
+## Layout
+
+```ermd-layout
+nameMode: logical
+tables:
+  - tableId: tbl_mpr5gt92_sxu1f
+    x: -42.551597203803496
+    'y': 9.731081025272047
+    width: 260
+  - tableId: tbl_mpr5gt92_y4im7
+    x: -27.1165411891985
+    'y': 166.83510094611853
+    width: 260
+  - tableId: tbl_mpr5gt92_kbf3b
+    x: 393.408132721776
+    'y': -13.57067064438067
+    width: 260
+  - tableId: tbl_mpr5gt92_w90yd
+    x: 40
+    'y': 480
+    width: 260
+  - tableId: tbl_mpr5gt92_7uz0i
+    x: 380
+    'y': 512
+    width: 260
+  - tableId: tbl_mpr5gt92_bm6ms
+    x: 720
+    'y': 140
+    width: 260
+  - tableId: tbl_mpr5gt92_iazpf
+    x: 380
+    'y': 692
+    width: 260
+  - tableId: tbl_mpr5gt92_5mv19
+    x: 720
+    'y': 682
+    width: 260
+regions: []
+viewport:
+  x: 150.58511549499724
+  'y': 32.89692683228472
+  zoom: 0.6597539553864477
+```
+
+## Versions
+
+```ermd-versions
+- id: ver_1780072954854
+  name: v1
+  date: '2026-05-29T16:42:34.854Z'
+  tables:
+    - id: tbl_mpr5gt92_sxu1f
+      logicalName: Author
+      physicalName: Author
+      comment: Stores book authors
+      designNote: Author and Address together form the composite PK
+      columns:
+        - id: col_mpr5gt92_7uj2p
+          logicalName: Name
+          physicalName: Name
+          dictionaryId: dict_mpr5gt92_d2dmc
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: Author full name
+        - id: col_mpr5gt92_g67qu
+          logicalName: Address
+          physicalName: Address
+          dictionaryId: dict_mpr5gt92_d2dmc
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: Author postal address
+          designNote: Part of composite PK
+        - id: col_mpr5gt92_y2cfp
+          logicalName: URL
+          physicalName: URL
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: Author website URL
+    - id: tbl_mpr5gt92_y4im7
+      logicalName: Publisher
+      physicalName: Publisher
+      comment: Stores book publishers
+      columns:
+        - id: col_mpr5gt92_v81q0
+          logicalName: Name
+          physicalName: Name
+          dictionaryId: dict_mpr5gt92_d2dmc
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: Publisher name (PK)
+        - id: col_mpr5gt92_ez6fs
+          logicalName: Address
+          physicalName: Address
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: Publisher address
+        - id: col_mpr5gt92_bk1ep
+          logicalName: Phone
+          physicalName: Phone
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: Publisher phone number
+        - id: col_mpr5gt92_w7w79
+          logicalName: URL
+          physicalName: URL
+          dictionaryId: dict_mpr5gt92_oihi9
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: Publisher URL / web reference
+    - id: tbl_mpr5gt92_kbf3b
+      logicalName: Book
+      physicalName: Book
+      comment: Central entity — a book title
+      columns:
+        - id: col_mpr5gt92_82rsa
+          logicalName: ISBN
+          physicalName: ISBN
+          dictionaryId: dict_mpr5gt92_d2dmc
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: International Standard Book Number (PK)
+        - id: col_mpr5gt92_yc75g
+          logicalName: PublisherName
+          physicalName: PublisherName
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: FK reference to Publisher.Name
+        - id: col_mpr5gt92_qbgqf
+          logicalName: AuthorName
+          physicalName: AuthorName
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: FK reference to Author.Name
+        - id: col_mpr5gt92_h1de0
+          logicalName: AuthorAddress
+          physicalName: AuthorAddress
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: FK reference to Author.Address
+        - id: col_mpr5gt92_6cksa
+          logicalName: Year
+          physicalName: Year
+          dictionaryId: dict_mpr5gt92_oihi9
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Year of publication
+        - id: col_mpr5gt92_fuhh4
+          logicalName: Title
+          physicalName: Title
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Book title
+        - id: col_mpr5gt92_laml5
+          logicalName: Price
+          physicalName: Price
+          dictionaryId: dict_mpr5gt92_6dtf0
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Cover price (numeric 19
+          designNote: 0)
+    - id: tbl_mpr5gt92_w90yd
+      logicalName: Customer
+      physicalName: Customer
+      comment: Registered customers
+      columns:
+        - id: col_mpr5gt92_ybdjh
+          logicalName: Email
+          physicalName: Email
+          dictionaryId: dict_mpr5gt92_d2dmc
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: Customer email address (PK)
+        - id: col_mpr5gt92_km8cf
+          logicalName: Name
+          physicalName: Name
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Customer full name
+        - id: col_mpr5gt92_nyrui
+          logicalName: Phone
+          physicalName: Phone
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Contact phone
+        - id: col_mpr5gt92_xcr7y
+          logicalName: Address
+          physicalName: Address
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Shipping address
+    - id: tbl_mpr5gt92_7uz0i
+      logicalName: ShoppingBasket
+      physicalName: ShoppingBasket
+      comment: A customer's shopping basket
+      columns:
+        - id: col_mpr5gt92_p6rpq
+          logicalName: ID
+          physicalName: ID
+          dictionaryId: dict_mpr5gt92_uswaw
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: Basket surrogate key (PK)
+        - id: col_mpr5gt92_h1yng
+          logicalName: CustomerEmail
+          physicalName: CustomerEmail
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: true
+          defaultValue: null
+          comment: FK to Customer.Email
+    - id: tbl_mpr5gt92_bm6ms
+      logicalName: ShoppingBasket_Book
+      physicalName: ShoppingBasket_Book
+      comment: Junction between basket and book
+      columns:
+        - id: col_mpr5gt92_aakpr
+          logicalName: ShoppingBasketID
+          physicalName: ShoppingBasketID
+          dictionaryId: dict_mpr5gt92_uswaw
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: FK to ShoppingBasket.ID (composite PK)
+        - id: col_mpr5gt92_jvs5e
+          logicalName: BookISBN
+          physicalName: BookISBN
+          dictionaryId: dict_mpr5gt92_d2dmc
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: FK to Book.ISBN (composite PK)
+        - id: col_mpr5gt92_os1e0
+          logicalName: Count
+          physicalName: Count
+          dictionaryId: dict_mpr5gt92_oihi9
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Number of copies of this book in the basket
+    - id: tbl_mpr5gt92_iazpf
+      logicalName: Warehouse
+      physicalName: Warehouse
+      comment: Physical warehouse locations
+      columns:
+        - id: col_mpr5gt92_i6gtz
+          logicalName: Code
+          physicalName: Code
+          dictionaryId: dict_mpr5gt92_uswaw
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: Warehouse code (PK)
+        - id: col_mpr5gt92_6e8nl
+          logicalName: Phone
+          physicalName: Phone
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Warehouse contact phone
+        - id: col_mpr5gt92_q0w8a
+          logicalName: Address
+          physicalName: Address
+          dictionaryId: dict_mpr5gt92_6wy7e
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Warehouse physical address
+    - id: tbl_mpr5gt92_5mv19
+      logicalName: Warehouse_Book
+      physicalName: Warehouse_Book
+      comment: Stock of a book in a warehouse
+      columns:
+        - id: col_mpr5gt92_q9mg2
+          logicalName: WarehouseCode
+          physicalName: WarehouseCode
+          dictionaryId: dict_mpr5gt92_uswaw
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: FK to Warehouse.Code (composite PK)
+        - id: col_mpr5gt92_gjurr
+          logicalName: BookISBN
+          physicalName: BookISBN
+          dictionaryId: dict_mpr5gt92_d2dmc
+          isPrimaryKey: true
+          isNullable: false
+          defaultValue: null
+          comment: FK to Book.ISBN (composite PK)
+        - id: col_mpr5gt92_5q9kh
+          logicalName: Count
+          physicalName: Count
+          dictionaryId: dict_mpr5gt92_oihi9
+          isPrimaryKey: false
+          isNullable: false
+          defaultValue: null
+          comment: Number of copies in stock
+  relations:
+    - id: rel_mpr5gt92_c4alj
+      fromTableId: tbl_mpr5gt92_sxu1f
+      fromColumnId: col_mpr5gt92_7uj2p
+      toTableId: tbl_mpr5gt92_kbf3b
+      toColumnId: col_mpr5gt92_qbgqf
+      fromCardinality: EXACTLY_ONE
+      toCardinality: ZERO_OR_MANY
+      identifying: false
+      hasForeignKey: true
+      constraintName: fk_book_author_name
+      comment: 'Non-identifying: Author may exist without Books'
+    - id: rel_mpr5gt92_vnx8k
+      fromTableId: tbl_mpr5gt92_y4im7
+      fromColumnId: col_mpr5gt92_v81q0
+      toTableId: tbl_mpr5gt92_kbf3b
+      toColumnId: col_mpr5gt92_yc75g
+      fromCardinality: EXACTLY_ONE
+      toCardinality: ZERO_OR_MANY
+      identifying: false
+      hasForeignKey: true
+      constraintName: fk_book_publisher_name
+      comment: 'Non-identifying: Publisher may exist without Books'
+    - id: rel_mpr5gt92_enf3p
+      fromTableId: tbl_mpr5gt92_kbf3b
+      fromColumnId: col_mpr5gt92_82rsa
+      toTableId: tbl_mpr5gt92_bm6ms
+      toColumnId: col_mpr5gt92_jvs5e
+      fromCardinality: EXACTLY_ONE
+      toCardinality: ZERO_OR_MANY
+      identifying: true
+      hasForeignKey: true
+      constraintName: fk_sbb_book_isbn
+      comment: 'Identifying: ShoppingBasket_Book depends on Book'
+    - id: rel_mpr5gt92_1o04t
+      fromTableId: tbl_mpr5gt92_kbf3b
+      fromColumnId: col_mpr5gt92_82rsa
+      toTableId: tbl_mpr5gt92_5mv19
+      toColumnId: col_mpr5gt92_gjurr
+      fromCardinality: EXACTLY_ONE
+      toCardinality: ZERO_OR_MANY
+      identifying: true
+      hasForeignKey: true
+      constraintName: fk_wb_book_isbn
+      comment: 'Identifying: Warehouse_Book depends on Book'
+    - id: rel_mpr5gt92_jefw4
+      fromTableId: tbl_mpr5gt92_w90yd
+      fromColumnId: col_mpr5gt92_ybdjh
+      toTableId: tbl_mpr5gt92_7uz0i
+      toColumnId: col_mpr5gt92_h1yng
+      fromCardinality: EXACTLY_ONE
+      toCardinality: ZERO_OR_MANY
+      identifying: false
+      hasForeignKey: true
+      constraintName: fk_basket_customer_email
+      comment: 'Non-identifying: Customer may exist without a basket'
+    - id: rel_mpr5gt93_he8g6
+      fromTableId: tbl_mpr5gt92_7uz0i
+      fromColumnId: col_mpr5gt92_p6rpq
+      toTableId: tbl_mpr5gt92_bm6ms
+      toColumnId: col_mpr5gt92_aakpr
+      fromCardinality: EXACTLY_ONE
+      toCardinality: ZERO_OR_MANY
+      identifying: true
+      hasForeignKey: true
+      constraintName: fk_sbb_basket_id
+      comment: 'Identifying: ShoppingBasket_Book depends on ShoppingBasket'
+    - id: rel_mpr5gt93_n24oa
+      fromTableId: tbl_mpr5gt92_iazpf
+      fromColumnId: col_mpr5gt92_i6gtz
+      toTableId: tbl_mpr5gt92_5mv19
+      toColumnId: col_mpr5gt92_q9mg2
+      fromCardinality: EXACTLY_ONE
+      toCardinality: ZERO_OR_MANY
+      identifying: true
+      hasForeignKey: true
+      constraintName: fk_wb_warehouse_code
+      comment: 'Identifying: Warehouse_Book depends on Warehouse'
+  dictionary:
+    - id: dict_mpr5gt92_d2dmc
+      name: VARCHAR(255)
+      dbType: VARCHAR
+      length: 255
+      notNull: true
+      comment: ''
+    - id: dict_mpr5gt92_6wy7e
+      name: VARCHAR(255) NULL
+      dbType: VARCHAR
+      length: 255
+      notNull: false
+      comment: ''
+    - id: dict_mpr5gt92_oihi9
+      name: VARCHAR(10) NULL
+      dbType: VARCHAR
+      length: 10
+      notNull: false
+      comment: ''
+    - id: dict_mpr5gt92_6dtf0
+      name: DECIMAL(19) NULL
+      dbType: DECIMAL
+      length: 19
+      notNull: false
+      comment: ''
+    - id: dict_mpr5gt92_uswaw
+      name: VARCHAR(10)
+      dbType: VARCHAR
+      length: 10
+      notNull: true
+      comment: ''
+  layout:
+    nameMode: logical
+    tables:
+      - tableId: tbl_mpr5gt92_sxu1f
+        x: 11.381215469613267
+        'y': -5.635359116022087
+        width: 260
+      - tableId: tbl_mpr5gt92_y4im7
+        x: 171.47054913828873
+        'y': -196.53100769345158
+        width: 260
+      - tableId: tbl_mpr5gt92_kbf3b
+        x: 607.3024669220896
+        'y': -187.60189501925123
+        width: 260
+      - tableId: tbl_mpr5gt92_w90yd
+        x: 1060.8354189868642
+        'y': -9.836431928506762
+        width: 260
+      - tableId: tbl_mpr5gt92_7uz0i
+        x: 60
+        'y': 260
+        width: 260
+      - tableId: tbl_mpr5gt92_bm6ms
+        x: 340
+        'y': 260
+        width: 260
+      - tableId: tbl_mpr5gt92_iazpf
+        x: 620
+        'y': 260
+        width: 260
+      - tableId: tbl_mpr5gt92_5mv19
+        x: 900
+        'y': 260
+        width: 260
+    regions: []
+    viewport:
+      x: 89.00305591691848
+      'y': 116.42824812031454
+      zoom: 0.4725327323965075
+```

@@ -1,0 +1,73 @@
+tableLogicalName,tablePhysicalName,tableComment,columnLogicalName,columnPhysicalName,dictionaryName,dbType,length,notNull,isPrimaryKey,isNullable,defaultValue,columnComment,columnDesignNote,tableDesignNote,tableStatus,columnStatus,relFromTable,relFromColumn,relToTable,relToColumn,relCardinality,relIdentifying,relHasFk,relConstraint,relComment
+Author,Author,Stores book authors — composite PK on Name+Address,Name,Name,Name,,,,true,false,,Author full name (part of composite PK),Name alone is not unique — composite key needed,Author and Address together uniquely identify an author,implemented,,,,,,,,,,
+Author,Author,,Address,Address,Name,,,,true,false,,Author postal address (part of composite PK),Part of composite PK with Name,,,,,,,,,,,,
+Author,Author,,URL,URL,Title,,,false,false,true,,Author personal or publisher website,,,,,,,,,,,,,,
+Publisher,Publisher,Stores book publishers — identified by their name,Name,Name,Name,,,,true,false,,Publisher name (PK),,,,implemented,,,,,,,,,,
+Publisher,Publisher,,Address,Address,Title,,,false,false,true,,Publisher mailing address,,,,,,,,,,,,,,
+Publisher,Publisher,,Phone,Phone,Name,,,false,false,true,,Publisher contact phone number,,,,,,,,,,,,,,
+Publisher,Publisher,,URL,URL,Title,,,false,false,true,,Publisher website or catalog URL,,,,,,,,,,,,,,
+Genre,Genre,Book genres / categories — used for browse and search,ID,ID,ID,,,,true,false,,Surrogate genre key (PK),,Simple lookup table — may evolve into a hierarchy (parent_id) later,implemented,,,,,,,,,,
+Genre,Genre,,Name,Name,Name,,,false,false,false,,Genre label (e.g. Fiction / Science / Biography),Should have UNIQUE constraint on Name,,,,,,,,,,,,,,
+Genre,Genre,,Description,Description,Text,,,false,false,true,,Optional longer description of the genre,,,,,,,,,,,,,,
+Book,Book,Central entity — a book title identified by ISBN,ISBN,ISBN,Name,,,,true,false,,International Standard Book Number (PK),ISBN is the natural key for books in this domain,Core entity — all other tables revolve around it,implemented,,,,,,,,,,
+Book,Book,,Publisher Name,PublisherName,Name,,,false,false,true,,FK to Publisher.Name — denormalised by design,Consider normalising to publisher_id in a future migration,,,,,,,,,,,,,,
+Book,Book,,Author Name,AuthorName,Name,,,false,false,true,,FK to Author.Name — part of composite FK,,,,,,,,,,,,,,
+Book,Book,,Author Address,AuthorAddress,Name,,,false,false,true,,FK to Author.Address — part of composite FK,,,,,,,,,,,,,,
+Book,Book,,Genre ID,GenreID,NullableID,,,false,false,true,,FK to Genre — nullable because some books are uncategorised,Awaiting Genre table rollout,,,planned,,,,,,,,,
+Book,Book,,Year,Year,Quantity,,,false,false,false,,Year of first publication,,,,,,,,,,,,,,
+Book,Book,,Title,Title,Title,,,false,false,false,,Full book title,,,,,,,,,,,,,,
+Book,Book,,Price,Price,Amount,,,false,false,false,,Cover price in base currency,,,,,,,,,,,,,,
+Customer,Customer,Registered customers identified by email address,Email,Email,Email,,,,true,false,,Customer email address (PK),,,,implemented,,,,,,,,,,
+Customer,Customer,,Name,Name,Name,,,false,false,false,,Customer full name,,,,,,,,,,,,,,
+Customer,Customer,,Phone,Phone,Name,,,false,false,false,,Contact phone number,,,,,,,,,,,,,,
+Customer,Customer,,Address,Address,Title,,,false,false,false,,Primary shipping address,,,,,,,,,,,,,,
+ShoppingBasket,ShoppingBasket,A customer's active or past shopping basket,ID,ID,ID,,,,true,false,,Surrogate basket key (PK),,,,implemented,,,,,,,,,,
+ShoppingBasket,ShoppingBasket,,Customer Email,CustomerEmail,Email,,,false,false,true,,FK to Customer.Email,,,,,,,,,,,,,,
+ShoppingBasket,ShoppingBasket,,Status,Status,Name,,,false,false,false,'active',Basket status: active / checked-out / abandoned,Use ENUM or lookup table when order flow is implemented,,,planned,,,,,,,,,
+ShoppingBasket_Book,ShoppingBasket_Book,Junction table linking baskets to books — composite PK,Shopping Basket ID,ShoppingBasketID,ID,,,,true,false,,FK to ShoppingBasket.ID (composite PK),,Junction table — child depends on both parent tables,implemented,,,,,,,,,,
+ShoppingBasket_Book,ShoppingBasket_Book,,Book ISBN,BookISBN,Name,,,,true,false,,FK to Book.ISBN (composite PK),,,,,,,,,,,,,,
+ShoppingBasket_Book,ShoppingBasket_Book,,Count,Count,Quantity,,,false,false,false,1,Number of copies of this book in the basket,,,,,,,,,,,,,,
+Warehouse,Warehouse,Physical warehouse locations holding book stock,Code,Code,ID,,,,true,false,,Warehouse surrogate key (PK),,,,implemented,,,,,,,,,,
+Warehouse,Warehouse,,Phone,Phone,Name,,,false,false,false,,Warehouse contact phone,,,,,,,,,,,,,,
+Warehouse,Warehouse,,Address,Address,Title,,,false,false,false,,Warehouse physical address,,,,,,,,,,,,,,
+Warehouse_Book,Warehouse_Book,Stock levels — how many copies of each book are in each warehouse,Warehouse Code,WarehouseCode,ID,,,,true,false,,FK to Warehouse.Code (composite PK),,Composite PK enforces one record per book per warehouse,implemented,,,,,,,,,,
+Warehouse_Book,Warehouse_Book,,Book ISBN,BookISBN,Name,,,,true,false,,FK to Book.ISBN (composite PK),,,,,,,,,,,,,,
+Warehouse_Book,Warehouse_Book,,Count,Count,Quantity,,,false,false,false,0,Number of copies currently in stock,,,,,,,,,,,,,,
+Order,Order,Completed purchase orders converted from a basket,ID,ID,ID,,,,true,false,,Surrogate order key (PK),,Scoped for Q2 — requires checkout flow and payment integration,planned,,,,,,,,,,
+Order,Order,,Customer Email,CustomerEmail,Email,,,false,false,false,,FK to the customer who placed this order,,,,,planned,,,,,,,,
+Order,Order,,Basket ID,BasketID,NullableID,,,false,false,true,,FK to the originating basket — nullable after basket cleanup,Retain basket reference for analytics; soft-delete basket on checkout,,,planned,,,,,,,,,
+Order,Order,,Total,Total,Amount,,,false,false,false,0.00,Order total at time of checkout (snapshot — prices may change later),,,,,planned,,,,,,,,,
+Order,Order,,Status,Status,Name,,,false,false,false,'pending',Order lifecycle: pending / paid / shipped / delivered / cancelled,Use a state-machine pattern; add audit log for state transitions,,,planned,,,,,,,,,
+Order,Order,,Created At,CreatedAt,Timestamp,,,false,false,false,CURRENT_TIMESTAMP,When the order was placed,,,,,planned,,,,,,,,,
+Book Review,BookReview,Customer reviews and ratings for books,ID,ID,ID,,,,true,false,,Surrogate review key (PK),,Reviews module scoped for Q3 — waiting on moderation policy approval,planned,,,,,,,,,,
+Book Review,BookReview,,Customer Email,CustomerEmail,Email,,,false,false,false,,FK to the customer who wrote this review,,,,,planned,,,,,,,,
+Book Review,BookReview,,Book ISBN,BookISBN,Name,,,false,false,false,,FK to the book being reviewed,,,,,planned,,,,,,,,
+Book Review,BookReview,,Rating,Rating,Flag,,,false,false,false,,Star rating 1–5 stored as TINYINT,Add CHECK constraint: rating BETWEEN 1 AND 5,,,planned,,,,,,,,,
+Book Review,BookReview,,Comment,Comment,Text,,,false,false,true,,Free-text review body — nullable so ratings without text are allowed,,,,,planned,,,,,,,,,
+Book Review,BookReview,,Created At,CreatedAt,Timestamp,,,false,false,false,CURRENT_TIMESTAMP,When the review was submitted,,,,,planned,,,,,,,,,
+Discount Code,DiscountCode,Promotional discount codes,ID,ID,ID,,,,true,false,,Surrogate discount key (PK),,Not yet approved by finance — discuss whether to allow stacking discounts,proposed,,,,,,,,,,
+Discount Code,DiscountCode,,Code,Code,Name,,,false,false,false,,Human-readable promo code (e.g. SUMMER20),Needs UNIQUE constraint — consider short Code preset (VARCHAR 20),,,proposed,,,,,,,,,
+Discount Code,DiscountCode,,Discount Percent,DiscountPercent,Quantity,,,false,false,false,,Percentage discount as integer (e.g. 20 for 20%),Alternative: store as DECIMAL for fractional discounts,,,proposed,,,,,,,,,
+Discount Code,DiscountCode,,Valid From,ValidFrom,Date,,,false,false,true,,Date from which the code is active,,,,,proposed,,,,,,,,,
+Discount Code,DiscountCode,,Valid To,ValidTo,Date,,,false,false,true,,Expiry date — null means no expiry,,,,,proposed,,,,,,,,,
+Discount Code,DiscountCode,,Is Active,IsActive,Flag,,,false,false,false,1,Whether the code can currently be applied,,,,,proposed,,,,,,,,,
+Notification,Notification,System notifications sent to customers,ID,ID,ID,,,,true,false,,Surrogate notification key (PK),,Channel (email/push/SMS) and template system TBD — do not build until Order is live,proposed,,,,,,,,,,
+Notification,Notification,,Customer Email,CustomerEmail,Email,,,false,false,false,,FK to the recipient customer,,,,,proposed,,,,,,,,
+Notification,Notification,,Type,Type,Name,,,false,false,false,,Notification type: order_confirmed / shipped / review_reminder,Finalise type enum once Order module ships,,,proposed,,,,,,,,,
+Notification,Notification,,Channel,Channel,Name,,,false,false,false,'email',Delivery channel: email / push / sms,,,,,proposed,,,,,,,,,
+Notification,Notification,,Sent At,SentAt,Timestamp,,,false,false,true,,When the notification was dispatched — null if pending,,,,,proposed,,,,,,,,,
+Notification,Notification,,Read At,ReadAt,Timestamp,,,false,false,true,,When the customer read/dismissed the notification,Only meaningful for push/in-app channels,,,proposed,,,,,,,,,
+,,,,,,,,,,,,,,,,,Author,Name,Book,AuthorName,ONE_TO_MANY,false,true,fk_book_author_name,Non-identifying: an author can exist without having published any books yet
+,,,,,,,,,,,,,,,,,Publisher,Name,Book,PublisherName,ONE_TO_MANY,false,true,fk_book_publisher_name,Non-identifying: a publisher can be registered before any books are catalogued
+,,,,,,,,,,,,,,,,,Genre,ID,Book,GenreID,ONE_TO_MANY,false,true,fk_book_genre_id,Non-identifying: a genre can exist without any books assigned yet
+,,,,,,,,,,,,,,,,,Customer,Email,ShoppingBasket,CustomerEmail,ONE_TO_MANY,false,true,fk_basket_customer_email,Non-identifying: a customer exists independently of their basket history
+,,,,,,,,,,,,,,,,,Book,ISBN,ShoppingBasket_Book,BookISBN,ONE_TO_MANY,true,true,fk_sbb_book_isbn,Identifying: a basket line item has no meaning without its book
+,,,,,,,,,,,,,,,,,ShoppingBasket,ID,ShoppingBasket_Book,ShoppingBasketID,ONE_TO_MANY,true,true,fk_sbb_basket_id,Identifying: a basket line item cannot exist without its parent basket
+,,,,,,,,,,,,,,,,,Book,ISBN,Warehouse_Book,BookISBN,ONE_TO_MANY,true,true,fk_wb_book_isbn,Identifying: a stock record depends on the book it tracks
+,,,,,,,,,,,,,,,,,Warehouse,Code,Warehouse_Book,WarehouseCode,ONE_TO_MANY,true,true,fk_wb_warehouse_code,Identifying: a stock record depends on the warehouse it belongs to
+,,,,,,,,,,,,,,,,,Customer,Email,Order,CustomerEmail,ONE_TO_MANY,false,true,fk_order_customer_email,Non-identifying: a customer can exist without any completed orders
+,,,,,,,,,,,,,,,,,ShoppingBasket,ID,Order,BasketID,ONE_TO_ONE,false,true,fk_order_basket_id,Non-identifying: one basket produces at most one order
+,,,,,,,,,,,,,,,,,Customer,Email,BookReview,CustomerEmail,ONE_TO_MANY,false,true,fk_review_customer_email,Non-identifying: a customer can exist without writing any reviews
+,,,,,,,,,,,,,,,,,Book,ISBN,BookReview,BookISBN,ONE_TO_MANY,false,true,fk_review_book_isbn,Non-identifying: a book can exist in the catalogue without reviews
+,,,,,,,,,,,,,,,,,ShoppingBasket,ID,DiscountCode,ID,MANY_TO_MANY,false,false,fk_basket_discount,Proposed: a basket may apply zero or more discount codes — junction table needed
+,,,,,,,,,,,,,,,,,Customer,Email,Notification,CustomerEmail,ONE_TO_MANY,false,true,fk_notification_customer,Proposed: a customer receives zero or more notifications

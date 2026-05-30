@@ -1,0 +1,98 @@
+{
+  "name": "erd-markdown",
+  "displayName": "ERD Markdown",
+  "description": "Interactive ER diagram editor stored as plain diffable .ermd files. Crow's foot notation, DDL export, CSV import, schema versioning, and dark/light theme support.",
+  "version": "0.1.0",
+  "publisher": "PabloGonzalezMartin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PabloGonzalezMartin/ERD-Mardown.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["onLanguage:ermd"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "ermd",
+        "extensions": [".ermd"],
+        "aliases": ["ER Diagram", "ermd"]
+      }
+    ],
+    "commands": [
+      {
+        "command": "erd-markdown.openDiagram",
+        "title": "Open as ER Diagram",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "erd-markdown.exportDdl",
+        "title": "ER Diagram: Export DDL (Full)"
+      },
+      {
+        "command": "erd-markdown.exportDdlDiff",
+        "title": "ER Diagram: Export DDL (Diff)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "erd-markdown.openDiagram",
+          "when": "resourceLangId == ermd",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "erd-markdown.openDiagram",
+          "when": "resourceExtname == .ermd",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Markdown ER Diagram",
+      "properties": {
+        "erd-markdown.ddl.dialect": {
+          "type": "string",
+          "enum": ["mysql", "postgresql", "sqlite", "sqlserver"],
+          "enumDescriptions": [
+            "MySQL / MariaDB",
+            "PostgreSQL",
+            "SQLite",
+            "Microsoft SQL Server / Azure SQL"
+          ],
+          "default": "mysql",
+          "description": "Target database dialect for DDL export."
+        },
+        "erd-markdown.mcp.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable the MCP server for AI assistant integration"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p tsconfig.json --noEmit",
+    "build:ext": "esbuild src/extension.ts --bundle --outfile=out/extension.js --format=cjs --platform=node --external:vscode --target=node20",
+    "build:webview": "cd webview && npm run build",
+    "build": "npm run build:ext && npm run build:webview",
+    "vscode:prepublish": "npm run build",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@types/js-yaml": "^4.0.9",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

@@ -1,0 +1,13 @@
+.vscode/**
+.vscode-test/**
+src/**
+shared/**
+webview/**
+out/**
+!out/extension.js
+**/*.map
+**/*.ts
+node_modules/**
+.gitignore
+tsconfig.json
+CLAUDE.md

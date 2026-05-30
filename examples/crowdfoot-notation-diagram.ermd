@@ -1,0 +1,915 @@
+---
+er-diagram: true
+version: 1
+---
+
+# crowdfoot-notation-diagram
+
+## Dictionary
+
+```ermd-dictionary
+- id: dict_mpsaezq4_gdera
+  name: Name
+  dbType: VARCHAR
+  length: 100
+  notNull: true
+  comment: Short name / label
+- id: dict_mpsaezq4_4iqzt
+  name: Title
+  dbType: VARCHAR
+  length: 255
+  notNull: true
+  comment: Title or longer name
+- id: dict_mpsaezq4_1nzi5
+  name: ID
+  dbType: INT
+  length: null
+  notNull: true
+  comment: Surrogate primary key
+- id: dict_mpsaezq4_vswlg
+  name: Text
+  dbType: TEXT
+  length: null
+  notNull: false
+  comment: Long text
+- id: dict_mpsaezq4_twffv
+  name: NullableID
+  dbType: INT
+  length: null
+  notNull: false
+  comment: Nullable foreign key
+- id: dict_mpsaezq4_wqwbg
+  name: Quantity
+  dbType: INT
+  length: null
+  notNull: true
+  comment: Integer quantity
+- id: dict_mpsaezq4_8nsta
+  name: Amount
+  dbType: DECIMAL
+  length: 10
+  notNull: true
+  comment: Monetary amount
+- id: dict_mpsaezq4_47pfz
+  name: Email
+  dbType: VARCHAR
+  length: 255
+  notNull: true
+  comment: Email address
+- id: dict_mpsaezq4_ue9rj
+  name: Timestamp
+  dbType: DATETIME
+  length: null
+  notNull: true
+  comment: Created/updated timestamp
+- id: dict_mpsaezq4_0hl0v
+  name: Flag
+  dbType: TINYINT
+  length: 1
+  notNull: true
+  comment: Boolean flag (0/1)
+- id: dict_mpsaezq4_r1btc
+  name: Date
+  dbType: DATE
+  length: null
+  notNull: true
+  comment: Calendar date
+```
+
+## Tables
+
+```ermd-table
+id: tbl_mpsaezq4_4mvq2
+logicalName: Author
+physicalName: Author
+comment: Stores book authors — composite PK on Name+Address
+designNote: Author and Address together uniquely identify an author
+status: implemented
+columns:
+  - id: col_mpsaezq4_frk88
+    logicalName: Name
+    physicalName: Name
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Author full name (part of composite PK)
+    designNote: Name alone is not unique — composite key needed
+  - id: col_mpsaezq4_vbo8i
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Author postal address (part of composite PK)
+    designNote: Part of composite PK with Name
+  - id: col_mpsaezq4_91l5v
+    logicalName: URL
+    physicalName: URL
+    dictionaryId: dict_mpsaezq4_4iqzt
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Author personal or publisher website
+```
+
+```ermd-table
+id: tbl_mpsaezq4_6ym3e
+logicalName: Publisher
+physicalName: Publisher
+comment: Stores book publishers — identified by their name
+status: implemented
+columns:
+  - id: col_mpsaezq4_okodj
+    logicalName: Name
+    physicalName: Name
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Publisher name (PK)
+  - id: col_mpsaezq4_0xy6q
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpsaezq4_4iqzt
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Publisher mailing address
+  - id: col_mpsaezq4_keuzm
+    logicalName: Phone
+    physicalName: Phone
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Publisher contact phone number
+  - id: col_mpsaezq4_zdzrx
+    logicalName: URL
+    physicalName: URL
+    dictionaryId: dict_mpsaezq4_4iqzt
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Publisher website or catalog URL
+```
+
+```ermd-table
+id: tbl_mpsaezq4_n3qhx
+logicalName: Genre
+physicalName: Genre
+comment: Book genres / categories — used for browse and search
+designNote: Simple lookup table — may evolve into a hierarchy (parent_id) later
+status: implemented
+columns:
+  - id: col_mpsaezq4_5mf2s
+    logicalName: ID
+    physicalName: ID
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Surrogate genre key (PK)
+  - id: col_mpsaezq4_9e67e
+    logicalName: Name
+    physicalName: Name
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Genre label (e.g. Fiction / Science / Biography)
+    designNote: Should have UNIQUE constraint on Name
+  - id: col_mpsaezq4_bs47x
+    logicalName: Description
+    physicalName: Description
+    dictionaryId: dict_mpsaezq4_vswlg
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Optional longer description of the genre
+```
+
+```ermd-table
+id: tbl_mpsaezq4_cjqfa
+logicalName: Book
+physicalName: Book
+comment: Central entity — a book title identified by ISBN
+designNote: Core entity — all other tables revolve around it
+status: implemented
+columns:
+  - id: col_mpsaezq4_9urnf
+    logicalName: ISBN
+    physicalName: ISBN
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: International Standard Book Number (PK)
+    designNote: ISBN is the natural key for books in this domain
+  - id: col_mpsaezq4_svfvc
+    logicalName: Publisher Name
+    physicalName: PublisherName
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK to Publisher.Name — denormalised by design
+    designNote: Consider normalising to publisher_id in a future migration
+  - id: col_mpsaezq4_4nxdl
+    logicalName: Author Name
+    physicalName: AuthorName
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK to Author.Name — part of composite FK
+  - id: col_mpsaezq4_rusun
+    logicalName: Author Address
+    physicalName: AuthorAddress
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK to Author.Address — part of composite FK
+  - id: col_mpsaezq4_3oma9
+    logicalName: Genre ID
+    physicalName: GenreID
+    dictionaryId: dict_mpsaezq4_twffv
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK to Genre — nullable because some books are uncategorised
+    designNote: Awaiting Genre table rollout
+    status: planned
+  - id: col_mpsaezq4_g6q02
+    logicalName: Year
+    physicalName: Year
+    dictionaryId: dict_mpsaezq4_wqwbg
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Year of first publication
+  - id: col_mpsaezq4_w58o2
+    logicalName: Title
+    physicalName: Title
+    dictionaryId: dict_mpsaezq4_4iqzt
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Full book title
+  - id: col_mpsaezq4_18lgc
+    logicalName: Price
+    physicalName: Price
+    dictionaryId: dict_mpsaezq4_8nsta
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Cover price in base currency
+```
+
+```ermd-table
+id: tbl_mpsaezq4_85azj
+logicalName: Customer
+physicalName: Customer
+comment: Registered customers identified by email address
+status: implemented
+columns:
+  - id: col_mpsaezq4_0x7ys
+    logicalName: Email
+    physicalName: Email
+    dictionaryId: dict_mpsaezq4_47pfz
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Customer email address (PK)
+  - id: col_mpsaezq4_qem12
+    logicalName: Name
+    physicalName: Name
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Customer full name
+  - id: col_mpsaezq4_xydyn
+    logicalName: Phone
+    physicalName: Phone
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Contact phone number
+  - id: col_mpsaezq4_2gdan
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpsaezq4_4iqzt
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Primary shipping address
+```
+
+```ermd-table
+id: tbl_mpsaezq4_fwf0f
+logicalName: ShoppingBasket
+physicalName: ShoppingBasket
+comment: A customer's active or past shopping basket
+status: implemented
+columns:
+  - id: col_mpsaezq4_ikyq8
+    logicalName: ID
+    physicalName: ID
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Surrogate basket key (PK)
+  - id: col_mpsaezq4_g33k6
+    logicalName: Customer Email
+    physicalName: CustomerEmail
+    dictionaryId: dict_mpsaezq4_47pfz
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK to Customer.Email
+  - id: col_mpsaezq4_mtzqe
+    logicalName: Status
+    physicalName: Status
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: '''active'''
+    comment: 'Basket status: active / checked-out / abandoned'
+    designNote: Use ENUM or lookup table when order flow is implemented
+    status: planned
+```
+
+```ermd-table
+id: tbl_mpsaezq4_14qd3
+logicalName: ShoppingBasket_Book
+physicalName: ShoppingBasket_Book
+comment: Junction table linking baskets to books — composite PK
+designNote: Junction table — child depends on both parent tables
+status: implemented
+columns:
+  - id: col_mpsaezq4_w1qz4
+    logicalName: Shopping Basket ID
+    physicalName: ShoppingBasketID
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to ShoppingBasket.ID (composite PK)
+  - id: col_mpsaezq4_m7gxi
+    logicalName: Book ISBN
+    physicalName: BookISBN
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to Book.ISBN (composite PK)
+  - id: col_mpsaezq4_v4qrr
+    logicalName: Count
+    physicalName: Count
+    dictionaryId: dict_mpsaezq4_wqwbg
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: '1'
+    comment: Number of copies of this book in the basket
+```
+
+```ermd-table
+id: tbl_mpsaezq4_rqmbm
+logicalName: Warehouse
+physicalName: Warehouse
+comment: Physical warehouse locations holding book stock
+status: implemented
+columns:
+  - id: col_mpsaezq4_0ij2i
+    logicalName: Code
+    physicalName: Code
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Warehouse surrogate key (PK)
+  - id: col_mpsaezq4_qxtmp
+    logicalName: Phone
+    physicalName: Phone
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Warehouse contact phone
+  - id: col_mpsaezq4_tozzv
+    logicalName: Address
+    physicalName: Address
+    dictionaryId: dict_mpsaezq4_4iqzt
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Warehouse physical address
+```
+
+```ermd-table
+id: tbl_mpsaezq4_rtbt0
+logicalName: Warehouse_Book
+physicalName: Warehouse_Book
+comment: Stock levels — how many copies of each book are in each warehouse
+designNote: Composite PK enforces one record per book per warehouse
+status: implemented
+columns:
+  - id: col_mpsaezq4_oc47s
+    logicalName: Warehouse Code
+    physicalName: WarehouseCode
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to Warehouse.Code (composite PK)
+  - id: col_mpsaezq4_yi628
+    logicalName: Book ISBN
+    physicalName: BookISBN
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: FK to Book.ISBN (composite PK)
+  - id: col_mpsaezq4_k643j
+    logicalName: Count
+    physicalName: Count
+    dictionaryId: dict_mpsaezq4_wqwbg
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: '0'
+    comment: Number of copies currently in stock
+```
+
+```ermd-table
+id: tbl_mpsaezq4_skvpv
+logicalName: Order
+physicalName: Order
+comment: Completed purchase orders converted from a basket
+designNote: Scoped for Q2 — requires checkout flow and payment integration
+status: planned
+columns:
+  - id: col_mpsaezq4_ym3le
+    logicalName: ID
+    physicalName: ID
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Surrogate order key (PK)
+  - id: col_mpsaezq4_b1jrs
+    logicalName: Customer Email
+    physicalName: CustomerEmail
+    dictionaryId: dict_mpsaezq4_47pfz
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: FK to the customer who placed this order
+  - id: col_mpsaezq4_7knf1
+    logicalName: Basket ID
+    physicalName: BasketID
+    dictionaryId: dict_mpsaezq4_twffv
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: FK to the originating basket — nullable after basket cleanup
+    designNote: Retain basket reference for analytics; soft-delete basket on checkout
+    status: planned
+  - id: col_mpsaezq4_2mum4
+    logicalName: Total
+    physicalName: Total
+    dictionaryId: dict_mpsaezq4_8nsta
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: '0.00'
+    comment: Order total at time of checkout (snapshot — prices may change later)
+  - id: col_mpsaezq4_vedz4
+    logicalName: Status
+    physicalName: Status
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: '''pending'''
+    comment: 'Order lifecycle: pending / paid / shipped / delivered / cancelled'
+    designNote: Use a state-machine pattern; add audit log for state transitions
+    status: planned
+  - id: col_mpsaezq4_c60qj
+    logicalName: Created At
+    physicalName: CreatedAt
+    dictionaryId: dict_mpsaezq4_ue9rj
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: CURRENT_TIMESTAMP
+    comment: When the order was placed
+```
+
+```ermd-table
+id: tbl_mpsaezq4_22fhw
+logicalName: Book Review
+physicalName: BookReview
+comment: Customer reviews and ratings for books
+designNote: Reviews module scoped for Q3 — waiting on moderation policy approval
+status: planned
+columns:
+  - id: col_mpsaezq4_9wul1
+    logicalName: ID
+    physicalName: ID
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Surrogate review key (PK)
+  - id: col_mpsaezq4_4t9ec
+    logicalName: Customer Email
+    physicalName: CustomerEmail
+    dictionaryId: dict_mpsaezq4_47pfz
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: FK to the customer who wrote this review
+  - id: col_mpsaezq4_tzvf9
+    logicalName: Book ISBN
+    physicalName: BookISBN
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: FK to the book being reviewed
+  - id: col_mpsaezq4_djge2
+    logicalName: Rating
+    physicalName: Rating
+    dictionaryId: dict_mpsaezq4_0hl0v
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Star rating 1–5 stored as TINYINT
+    designNote: 'Add CHECK constraint: rating BETWEEN 1 AND 5'
+    status: planned
+  - id: col_mpsaezq4_bss6r
+    logicalName: Comment
+    physicalName: Comment
+    dictionaryId: dict_mpsaezq4_vswlg
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Free-text review body — nullable so ratings without text are allowed
+  - id: col_mpsaezq4_r7zh2
+    logicalName: Created At
+    physicalName: CreatedAt
+    dictionaryId: dict_mpsaezq4_ue9rj
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: CURRENT_TIMESTAMP
+    comment: When the review was submitted
+```
+
+```ermd-table
+id: tbl_mpsaezq4_70s0m
+logicalName: Discount Code
+physicalName: DiscountCode
+comment: Promotional discount codes
+designNote: Not yet approved by finance — discuss whether to allow stacking discounts
+status: proposed
+columns:
+  - id: col_mpsaezq4_j1rah
+    logicalName: ID
+    physicalName: ID
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Surrogate discount key (PK)
+  - id: col_mpsaezq4_5sbl1
+    logicalName: Code
+    physicalName: Code
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Human-readable promo code (e.g. SUMMER20)
+    designNote: Needs UNIQUE constraint — consider short Code preset (VARCHAR 20)
+    status: proposed
+  - id: col_mpsaezq4_2xoim
+    logicalName: Discount Percent
+    physicalName: DiscountPercent
+    dictionaryId: dict_mpsaezq4_wqwbg
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: Percentage discount as integer (e.g. 20 for 20%)
+    designNote: 'Alternative: store as DECIMAL for fractional discounts'
+    status: proposed
+  - id: col_mpsaezq4_ohxqg
+    logicalName: Valid From
+    physicalName: ValidFrom
+    dictionaryId: dict_mpsaezq4_r1btc
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Date from which the code is active
+  - id: col_mpsaezq4_ca0cc
+    logicalName: Valid To
+    physicalName: ValidTo
+    dictionaryId: dict_mpsaezq4_r1btc
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: Expiry date — null means no expiry
+  - id: col_mpsaezq4_s69g7
+    logicalName: Is Active
+    physicalName: IsActive
+    dictionaryId: dict_mpsaezq4_0hl0v
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: '1'
+    comment: Whether the code can currently be applied
+```
+
+```ermd-table
+id: tbl_mpsaezq4_gxm2v
+logicalName: Notification
+physicalName: Notification
+comment: System notifications sent to customers
+designNote: Channel (email/push/SMS) and template system TBD — do not build until Order is live
+status: proposed
+columns:
+  - id: col_mpsaezq4_rd7ye
+    logicalName: ID
+    physicalName: ID
+    dictionaryId: dict_mpsaezq4_1nzi5
+    isPrimaryKey: true
+    isNullable: false
+    defaultValue: null
+    comment: Surrogate notification key (PK)
+  - id: col_mpsaezq4_xua9n
+    logicalName: Customer Email
+    physicalName: CustomerEmail
+    dictionaryId: dict_mpsaezq4_47pfz
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: FK to the recipient customer
+  - id: col_mpsaezq4_dhrqc
+    logicalName: Type
+    physicalName: Type
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: null
+    comment: 'Notification type: order_confirmed / shipped / review_reminder'
+    designNote: Finalise type enum once Order module ships
+    status: proposed
+  - id: col_mpsaezq4_ziql1
+    logicalName: Channel
+    physicalName: Channel
+    dictionaryId: dict_mpsaezq4_gdera
+    isPrimaryKey: false
+    isNullable: false
+    defaultValue: '''email'''
+    comment: 'Delivery channel: email / push / sms'
+  - id: col_mpsaezq4_jgv8w
+    logicalName: Sent At
+    physicalName: SentAt
+    dictionaryId: dict_mpsaezq4_ue9rj
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: When the notification was dispatched — null if pending
+  - id: col_mpsaezq4_lfn9i
+    logicalName: Read At
+    physicalName: ReadAt
+    dictionaryId: dict_mpsaezq4_ue9rj
+    isPrimaryKey: false
+    isNullable: true
+    defaultValue: null
+    comment: When the customer read/dismissed the notification
+    designNote: Only meaningful for push/in-app channels
+    status: proposed
+```
+
+## Relations
+
+```ermd-relations
+- id: rel_mpsaezq4_64hd4
+  fromTableId: tbl_mpsaezq4_4mvq2
+  fromColumnId: col_mpsaezq4_frk88
+  toTableId: tbl_mpsaezq4_cjqfa
+  toColumnId: col_mpsaezq4_4nxdl
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_book_author_name
+  comment: 'Non-identifying: an author can exist without having published any books yet'
+- id: rel_mpsaezq4_1gzse
+  fromTableId: tbl_mpsaezq4_6ym3e
+  fromColumnId: col_mpsaezq4_okodj
+  toTableId: tbl_mpsaezq4_cjqfa
+  toColumnId: col_mpsaezq4_svfvc
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_book_publisher_name
+  comment: 'Non-identifying: a publisher can be registered before any books are catalogued'
+- id: rel_mpsaezq4_1ghey
+  fromTableId: tbl_mpsaezq4_n3qhx
+  fromColumnId: col_mpsaezq4_5mf2s
+  toTableId: tbl_mpsaezq4_cjqfa
+  toColumnId: col_mpsaezq4_3oma9
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_book_genre_id
+  comment: 'Non-identifying: a genre can exist without any books assigned yet'
+- id: rel_mpsaezq4_9z0ef
+  fromTableId: tbl_mpsaezq4_85azj
+  fromColumnId: col_mpsaezq4_0x7ys
+  toTableId: tbl_mpsaezq4_fwf0f
+  toColumnId: col_mpsaezq4_g33k6
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_basket_customer_email
+  comment: 'Non-identifying: a customer exists independently of their basket history'
+- id: rel_mpsaezq4_2pu63
+  fromTableId: tbl_mpsaezq4_cjqfa
+  fromColumnId: col_mpsaezq4_9urnf
+  toTableId: tbl_mpsaezq4_14qd3
+  toColumnId: col_mpsaezq4_m7gxi
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_sbb_book_isbn
+  comment: 'Identifying: a basket line item has no meaning without its book'
+- id: rel_mpsaezq4_rdm98
+  fromTableId: tbl_mpsaezq4_fwf0f
+  fromColumnId: col_mpsaezq4_ikyq8
+  toTableId: tbl_mpsaezq4_14qd3
+  toColumnId: col_mpsaezq4_w1qz4
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_sbb_basket_id
+  comment: 'Identifying: a basket line item cannot exist without its parent basket'
+- id: rel_mpsaezq4_smf47
+  fromTableId: tbl_mpsaezq4_cjqfa
+  fromColumnId: col_mpsaezq4_9urnf
+  toTableId: tbl_mpsaezq4_rtbt0
+  toColumnId: col_mpsaezq4_yi628
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_wb_book_isbn
+  comment: 'Identifying: a stock record depends on the book it tracks'
+- id: rel_mpsaezq4_x94rv
+  fromTableId: tbl_mpsaezq4_rqmbm
+  fromColumnId: col_mpsaezq4_0ij2i
+  toTableId: tbl_mpsaezq4_rtbt0
+  toColumnId: col_mpsaezq4_oc47s
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: true
+  hasForeignKey: true
+  constraintName: fk_wb_warehouse_code
+  comment: 'Identifying: a stock record depends on the warehouse it belongs to'
+- id: rel_mpsaezq4_iuakt
+  fromTableId: tbl_mpsaezq4_85azj
+  fromColumnId: col_mpsaezq4_0x7ys
+  toTableId: tbl_mpsaezq4_skvpv
+  toColumnId: col_mpsaezq4_b1jrs
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_order_customer_email
+  comment: 'Non-identifying: a customer can exist without any completed orders'
+- id: rel_mpsaezq4_b2lev
+  fromTableId: tbl_mpsaezq4_fwf0f
+  fromColumnId: col_mpsaezq4_ikyq8
+  toTableId: tbl_mpsaezq4_skvpv
+  toColumnId: col_mpsaezq4_7knf1
+  fromCardinality: EXACTLY_ONE
+  toCardinality: EXACTLY_ONE
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_order_basket_id
+  comment: 'Non-identifying: one basket produces at most one order'
+- id: rel_mpsaezq4_vf9i7
+  fromTableId: tbl_mpsaezq4_85azj
+  fromColumnId: col_mpsaezq4_0x7ys
+  toTableId: tbl_mpsaezq4_22fhw
+  toColumnId: col_mpsaezq4_4t9ec
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_review_customer_email
+  comment: 'Non-identifying: a customer can exist without writing any reviews'
+- id: rel_mpsaezq4_c9pxt
+  fromTableId: tbl_mpsaezq4_cjqfa
+  fromColumnId: col_mpsaezq4_9urnf
+  toTableId: tbl_mpsaezq4_22fhw
+  toColumnId: col_mpsaezq4_tzvf9
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_review_book_isbn
+  comment: 'Non-identifying: a book can exist in the catalogue without reviews'
+- id: rel_mpsaezq4_ttxa9
+  fromTableId: tbl_mpsaezq4_fwf0f
+  fromColumnId: col_mpsaezq4_ikyq8
+  toTableId: tbl_mpsaezq4_70s0m
+  toColumnId: col_mpsaezq4_j1rah
+  fromCardinality: ZERO_OR_MANY
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: false
+  constraintName: fk_basket_discount
+  comment: 'Proposed: a basket may apply zero or more discount codes — junction table needed'
+- id: rel_mpsaezq4_5n4hu
+  fromTableId: tbl_mpsaezq4_85azj
+  fromColumnId: col_mpsaezq4_0x7ys
+  toTableId: tbl_mpsaezq4_gxm2v
+  toColumnId: col_mpsaezq4_xua9n
+  fromCardinality: EXACTLY_ONE
+  toCardinality: ZERO_OR_MANY
+  identifying: false
+  hasForeignKey: true
+  constraintName: fk_notification_customer
+  comment: 'Proposed: a customer receives zero or more notifications'
+```
+
+## Layout
+
+```ermd-layout
+nameMode: logical
+tables:
+  - tableId: tbl_mpsaezq4_4mvq2
+    x: 40
+    'y': 56
+    width: 260
+  - tableId: tbl_mpsaezq4_6ym3e
+    x: 370
+    'y': 40
+    width: 260
+  - tableId: tbl_mpsaezq4_n3qhx
+    x: 690
+    'y': 56
+    width: 260
+  - tableId: tbl_mpsaezq4_cjqfa
+    x: 390
+    'y': 296
+    width: 260
+  - tableId: tbl_mpsaezq4_85azj
+    x: 1330
+    'y': 40
+    width: 260
+  - tableId: tbl_mpsaezq4_fwf0f
+    x: 1490
+    'y': 376
+    width: 260
+  - tableId: tbl_mpsaezq4_14qd3
+    x: 1170
+    'y': 728
+    width: 260
+  - tableId: tbl_mpsaezq4_rqmbm
+    x: 850
+    'y': 376
+    width: 260
+  - tableId: tbl_mpsaezq4_rtbt0
+    x: 540
+    'y': 728
+    width: 260
+  - tableId: tbl_mpsaezq4_skvpv
+    x: 1810
+    'y': 680
+    width: 260
+  - tableId: tbl_mpsaezq4_22fhw
+    x: 40
+    'y': 680
+    width: 260
+  - tableId: tbl_mpsaezq4_70s0m
+    x: 1490
+    'y': 680
+    width: 260
+  - tableId: tbl_mpsaezq4_gxm2v
+    x: 1170
+    'y': 328
+    width: 260
+regions: []
+viewport:
+  x: 70.87324197349568
+  'y': 49.86015876042569
+  zoom: 0.7074320617791371
+```

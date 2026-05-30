@@ -2,7 +2,7 @@
   "name": "erd-markdown",
   "displayName": "ERD Markdown",
   "description": "Interactive ER diagram editor stored as plain diffable .ermd files. Crow's foot notation, DDL export, CSV import, schema versioning, and dark/light theme support.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "PabloGonzalezMartin",
   "icon": "icon.png",
   "repository": {

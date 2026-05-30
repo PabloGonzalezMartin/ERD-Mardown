@@ -2,8 +2,9 @@
   "name": "erd-markdown",
   "displayName": "ERD Markdown",
   "description": "Interactive ER diagram editor stored as plain diffable .ermd files. Crow's foot notation, DDL export, CSV import, schema versioning, and dark/light theme support.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "PabloGonzalezMartin",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/PabloGonzalezMartin/ERD-Mardown.git"
@@ -19,7 +20,11 @@
       {
         "id": "ermd",
         "extensions": [".ermd"],
-        "aliases": ["ER Diagram", "ermd"]
+        "aliases": ["ER Diagram", "ermd"],
+        "icon": {
+          "light": "./images/file-icon.png",
+          "dark": "./images/file-icon.png"
+        }
       }
     ],
     "commands": [

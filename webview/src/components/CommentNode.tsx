@@ -2,6 +2,7 @@ import { memo, useState, useRef, useCallback, useEffect } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { useDiagramStore } from '../store/diagramStore';
 import { useUiStore } from '../store/uiStore';
+import { readableColor } from '../util/colorUtils';
 import type { CommentNodeType } from '../util/xyflowAdapters';
 
 const DEFAULT_TEXT_COLOR = '#333333';
@@ -78,6 +79,10 @@ export const CommentNode = memo(({ data, selected }: NodeProps<CommentNodeType>)
   const bgColor    = comment?.bgColor    ?? DEFAULT_BG_COLOR;
   const fontSize   = comment?.fontSize   ?? DEFAULT_FONT_SIZE;
   const fontFamily = comment?.fontFamily ?? DEFAULT_FONT_FAMILY;
+  const theme      = useUiStore((s) => s.theme);
+  // Use bgColor as contrast reference when it's a solid hex; otherwise fall back to canvas bg
+  const solidBg    = /^#[0-9a-fA-F]{6}$/.test(bgColor) ? bgColor : undefined;
+  const displayTextColor = readableColor(textColor, theme === 'dark', solidBg);
 
   const applyStyle = useCallback((patch: Parameters<typeof updateComment>[1]) => {
     updateComment(commentId, patch);
@@ -142,7 +147,7 @@ export const CommentNode = memo(({ data, selected }: NodeProps<CommentNodeType>)
           style={{
             ...sharedTextStyle,
             background: 'transparent',
-            color: textColor,
+            color: displayTextColor,
             border: '1px dashed #4a90d9',
             borderRadius: 3,
             padding: '2px 4px',
@@ -158,7 +163,7 @@ export const CommentNode = memo(({ data, selected }: NodeProps<CommentNodeType>)
         <span
           style={{
             ...sharedTextStyle,
-            color: comment.text ? textColor : '#bbb',
+            color: comment.text ? displayTextColor : '#bbb',
             userSelect: 'none',
             whiteSpace: 'pre-wrap',
             display: 'block',

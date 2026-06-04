@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { NodeResizer, type NodeProps, type ResizeParams } from '@xyflow/react';
 import { useDiagramStore } from '../store/diagramStore';
 import { useUiStore } from '../store/uiStore';
+import { readableColor } from '../util/colorUtils';
 import type { RegionNodeType } from '../util/xyflowAdapters';
 
 // Shared set of region IDs currently being resized — used to suppress
@@ -132,7 +133,8 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
 
   if (!region) return null;
 
-  const textColor   = region.textColor   ?? DEFAULT_TEXT_COLOR;
+  const textColor        = region.textColor ?? DEFAULT_TEXT_COLOR;
+  const displayTextColor = selected ? '#4a90d9' : readableColor(textColor, isDark);
   const bgColor     = region.bgColor     ?? DEFAULT_BG_COLOR;
   const borderColor = region.borderColor ?? DEFAULT_BORDER_COLOR;
   const fontSize    = region.fontSize    ?? DEFAULT_FONT_SIZE;
@@ -225,7 +227,7 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
               fontSize,
               fontFamily,
               fontWeight: 600,
-              color: selected ? '#4a90d9' : textColor,
+              color: displayTextColor,
               userSelect: 'none',
               whiteSpace: 'nowrap',
               overflow: 'hidden',

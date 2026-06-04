@@ -2,6 +2,18 @@ import * as yaml from 'js-yaml';
 import * as vscode from 'vscode';
 import { DiagramModel } from '../shared/DiagramModel';
 
+// Reorders object keys so that `firstKeys` appear first, rest follow in original order.
+function reorder<T extends object>(obj: T, firstKeys: (keyof T)[]): T {
+  const result: Partial<T> = {};
+  for (const key of firstKeys) {
+    if (key in obj) { result[key] = obj[key]; }
+  }
+  for (const key of Object.keys(obj) as (keyof T)[]) {
+    if (!firstKeys.includes(key)) { result[key] = obj[key]; }
+  }
+  return result as T;
+}
+
 export class ErmdSerializer {
   static serialize(model: DiagramModel, fileUri: vscode.Uri): string {
     const filename = fileUri.path.split('/').pop() ?? 'ER Diagram';
@@ -21,7 +33,8 @@ export class ErmdSerializer {
       lines.push('## Dictionary');
       lines.push('');
       lines.push('```ermd-dictionary');
-      lines.push(yaml.dump(model.dictionary, { indent: 2, lineWidth: -1 }).trimEnd());
+      const dict = model.dictionary.map((e) => reorder(e, ['name', 'id']));
+      lines.push(yaml.dump(dict, { indent: 2, lineWidth: -1 }).trimEnd());
       lines.push('```');
     }
 
@@ -29,9 +42,13 @@ export class ErmdSerializer {
       lines.push('');
       lines.push('## Tables');
       for (const table of model.tables) {
+        const ordered = reorder(
+          { ...table, columns: table.columns.map((c) => reorder(c, ['physicalName', 'id'])) },
+          ['physicalName', 'id'],
+        );
         lines.push('');
         lines.push('```ermd-table');
-        lines.push(yaml.dump(table, { indent: 2, lineWidth: -1 }).trimEnd());
+        lines.push(yaml.dump(ordered, { indent: 2, lineWidth: -1 }).trimEnd());
         lines.push('```');
       }
     }
@@ -41,7 +58,8 @@ export class ErmdSerializer {
       lines.push('## Relations');
       lines.push('');
       lines.push('```ermd-relations');
-      lines.push(yaml.dump(model.relations, { indent: 2, lineWidth: -1 }).trimEnd());
+      const relations = model.relations.map((r) => reorder(r, ['constraintName', 'id']));
+      lines.push(yaml.dump(relations, { indent: 2, lineWidth: -1 }).trimEnd());
       lines.push('```');
     }
 

@@ -15,8 +15,6 @@ const DEFAULT_BORDER_COLOR = '#888888';
 const DEFAULT_FONT_SIZE    = 13;
 const DEFAULT_FONT_FAMILY  = 'inherit';
 
-const TITLEBAR_H = 28; // px — height of the drag handle / title bar
-
 const TEXT_COLORS = [
   '#aaaaaa', '#ffffff', '#333333',
   '#c0392b', '#e67e22', '#f1c40f',
@@ -141,6 +139,7 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
   const fontFamily  = region.fontFamily  ?? DEFAULT_FONT_FAMILY;
 
   const borderStyle = selected ? `2px solid #4a90d9` : `2px dashed ${borderColor}`;
+  const titlebarH   = Math.max(28, fontSize + 14); // padding 7px top+bottom
 
   return (
     <div
@@ -150,7 +149,7 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
       <NodeResizer
         isVisible={selected}
         minWidth={160}
-        minHeight={TITLEBAR_H + 40}
+        minHeight={titlebarH + 40}
         onResizeStart={handleResizeStart}
         onResizeEnd={handleResizeEnd}
       />
@@ -171,7 +170,7 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
         style={{
           position: 'absolute',
           top: 0, left: 0, right: 0,
-          height: TITLEBAR_H,
+          height: titlebarH,
           borderRadius: '4px 4px 0 0',
           background: titleBg,
           borderBottom: `1px solid ${selected ? '#4a90d9' : borderColor}`,

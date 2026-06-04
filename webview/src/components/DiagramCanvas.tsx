@@ -52,7 +52,7 @@ function ReactFlowControls({
       const viewportW   = window.innerWidth - SIDEBAR_W - PANEL_W;
       const viewportH   = window.innerHeight - 44;
       const padding     = 20;
-      const maxZoom     = 0.9;
+      const maxZoom     = 1.3;
       const zoomX       = (viewportW - padding * 2) / Math.max(width,  1);
       const zoomY       = (viewportH - padding * 2) / Math.max(height, 1);
       const zoom        = Math.min(zoomX, zoomY, maxZoom);
@@ -82,6 +82,22 @@ function ReactFlowControls({
         })
       );
     };
+    const onCenterOnTable = (e: Event) => {
+      const { x, y, width, height } = (e as CustomEvent<{ x: number; y: number; width: number; height: number }>).detail;
+      const SIDEBAR_W = 44;
+      const PANEL_W   = 520;
+      const viewportW = window.innerWidth - SIDEBAR_W - PANEL_W;
+      const viewportH = window.innerHeight - 44;
+      const padding   = 60;
+      const maxZoom   = 1.3;
+      const zoomX     = (viewportW - padding * 2) / Math.max(width,  1);
+      const zoomY     = (viewportH - padding * 2) / Math.max(height, 1);
+      const zoom      = Math.min(zoomX, zoomY, maxZoom);
+      const cx = x + width  / 2;
+      const cy = y + height / 2;
+      const panelOffsetCanvas = (PANEL_W / 2) / zoom;
+      setCenter(cx + panelOffsetCanvas, cy, { zoom, duration: 350 });
+    };
     const onSelectRegion = (e: Event) => {
       const { regionId } = (e as CustomEvent<{ regionId: string }>).detail;
       selectRegion(regionId);
@@ -92,6 +108,7 @@ function ReactFlowControls({
     window.addEventListener('er:zoomOut',                onOut);
     window.addEventListener('er:centerOn',               onCenter);
     window.addEventListener('er:centerOnRelation',       onCenterRelation);
+    window.addEventListener('er:centerOnTable',          onCenterOnTable);
     window.addEventListener('er:selectRegionContents',   onSelectRegionContents);
     window.addEventListener('er:selectRegion',           onSelectRegion);
     return () => {
@@ -100,6 +117,7 @@ function ReactFlowControls({
       window.removeEventListener('er:zoomOut',                onOut);
       window.removeEventListener('er:centerOn',               onCenter);
       window.removeEventListener('er:centerOnRelation',       onCenterRelation);
+      window.removeEventListener('er:centerOnTable',          onCenterOnTable);
       window.removeEventListener('er:selectRegionContents',   onSelectRegionContents);
       window.removeEventListener('er:selectRegion',           onSelectRegion);
     };
@@ -239,6 +257,15 @@ export function DiagramCanvas() {
         selectComment(node.id);
       } else {
         selectTable(node.id);
+        const m = modelRef.current;
+        const layout = m.layout.tables.find((l) => l.tableId === node.id);
+        const table  = m.tables.find((t) => t.id === node.id);
+        if (layout && table) {
+          const h = 42 + table.columns.length * 26;
+          window.dispatchEvent(new CustomEvent('er:centerOnTable', {
+            detail: { x: layout.x, y: layout.y, width: layout.width ?? 240, height: h },
+          }));
+        }
       }
     },
     [selectTable, selectRelation, selectRegion, selectComment, setEdges]

@@ -28,8 +28,14 @@ const nodeTypes: any = { tableNode: TableNode, regionNode: RegionNode, commentNo
 const edgeTypes: any = { relationEdge: RelationEdge };
 
 // Inner component that has access to the ReactFlow context (useReactFlow)
-function ReactFlowControls() {
-  const { fitView, zoomIn, zoomOut, setCenter, fitBounds } = useReactFlow();
+function ReactFlowControls({
+  setNodes,
+  selectRegion,
+}: {
+  setNodes: (updater: (nodes: any[]) => any[]) => void;
+  selectRegion: (id: string | null) => void;
+}) {
+  const { fitView, zoomIn, zoomOut, setCenter, getNodes } = useReactFlow();
 
   useEffect(() => {
     const onFit    = () => fitView({ duration: 300, padding: 0.1 });
@@ -41,39 +47,63 @@ function ReactFlowControls() {
     };
     const onCenterRelation = (e: Event) => {
       const { x, y, width, height } = (e as CustomEvent<{ x: number; y: number; width: number; height: number }>).detail;
-      // Fit the bounding box of the two tables into the left ~65% of the viewport
-      // (right ~35% is the edit panel). Add generous padding so tables aren't edge-to-edge.
       const SIDEBAR_W   = 44;
       const PANEL_W     = 520;
       const viewportW   = window.innerWidth - SIDEBAR_W - PANEL_W;
-      const viewportH   = window.innerHeight - 44; // subtract toolbar
+      const viewportH   = window.innerHeight - 44;
       const padding     = 20;
       const maxZoom     = 0.9;
       const zoomX       = (viewportW - padding * 2) / Math.max(width,  1);
       const zoomY       = (viewportH - padding * 2) / Math.max(height, 1);
       const zoom        = Math.min(zoomX, zoomY, maxZoom);
-      // Center of the bounding box in canvas coords
       const cx = x + width  / 2;
       const cy = y + height / 2;
-      // Shift left in canvas units so the bounding box sits in the left portion.
-      // The edit panel takes PANEL_W screen pixels → PANEL_W/zoom canvas units.
-      // Offset by half that to move the center left of the panel.
       const panelOffsetCanvas = (PANEL_W / 2) / zoom;
       setCenter(cx + panelOffsetCanvas, cy, { zoom, duration: 400 });
     };
-    window.addEventListener('er:fitView',          onFit);
-    window.addEventListener('er:zoomIn',           onIn);
-    window.addEventListener('er:zoomOut',          onOut);
-    window.addEventListener('er:centerOn',         onCenter);
-    window.addEventListener('er:centerOnRelation', onCenterRelation);
-    return () => {
-      window.removeEventListener('er:fitView',          onFit);
-      window.removeEventListener('er:zoomIn',           onIn);
-      window.removeEventListener('er:zoomOut',          onOut);
-      window.removeEventListener('er:centerOn',         onCenter);
-      window.removeEventListener('er:centerOnRelation', onCenterRelation);
+    const onSelectRegionContents = (e: Event) => {
+      const { regionId } = (e as CustomEvent<{ regionId: string }>).detail;
+      const allNodes = getNodes();
+      const region = allNodes.find((n) => n.id === regionId);
+      if (!region) return;
+      const rx = region.position.x;
+      const ry = region.position.y;
+      const rw = (region.style?.width as number) ?? 400;
+      const rh = (region.style?.height as number) ?? 300;
+      setNodes((nodes) =>
+        nodes.map((n) => {
+          // Include the region itself so it moves with its contents
+          if (n.id === regionId) return { ...n, selected: true };
+          if (n.type === 'regionNode') return { ...n, selected: false };
+          const nx = n.position.x;
+          const ny = n.position.y;
+          const inside = nx >= rx && ny >= ry && nx <= rx + rw && ny <= ry + rh;
+          return { ...n, selected: inside };
+        })
+      );
     };
-  }, [fitView, zoomIn, zoomOut, setCenter]);
+    const onSelectRegion = (e: Event) => {
+      const { regionId } = (e as CustomEvent<{ regionId: string }>).detail;
+      selectRegion(regionId);
+      setNodes((nodes) => nodes.map((n) => ({ ...n, selected: n.id === regionId })));
+    };
+    window.addEventListener('er:fitView',                onFit);
+    window.addEventListener('er:zoomIn',                 onIn);
+    window.addEventListener('er:zoomOut',                onOut);
+    window.addEventListener('er:centerOn',               onCenter);
+    window.addEventListener('er:centerOnRelation',       onCenterRelation);
+    window.addEventListener('er:selectRegionContents',   onSelectRegionContents);
+    window.addEventListener('er:selectRegion',           onSelectRegion);
+    return () => {
+      window.removeEventListener('er:fitView',                onFit);
+      window.removeEventListener('er:zoomIn',                 onIn);
+      window.removeEventListener('er:zoomOut',                onOut);
+      window.removeEventListener('er:centerOn',               onCenter);
+      window.removeEventListener('er:centerOnRelation',       onCenterRelation);
+      window.removeEventListener('er:selectRegionContents',   onSelectRegionContents);
+      window.removeEventListener('er:selectRegion',           onSelectRegion);
+    };
+  }, [fitView, zoomIn, zoomOut, setCenter, getNodes, setNodes, selectRegion]);
 
   return null;
 }
@@ -202,6 +232,7 @@ export function DiagramCanvas() {
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
       if (node.type === 'regionNode') {
         selectRegion(node.id);
       } else if (node.type === 'commentNode') {
@@ -210,12 +241,16 @@ export function DiagramCanvas() {
         selectTable(node.id);
       }
     },
-    [selectTable, selectRelation, selectRegion, selectComment]
+    [selectTable, selectRelation, selectRegion, selectComment, setEdges]
   );
 
   const handleEdgeClick = useCallback(
     (_: React.MouseEvent, edge: any) => {
       selectRelation(edge.id);
+      // Mark the clicked edge as selected in ReactFlow state so RelationEdge receives selected=true
+      setEdges((eds) =>
+        eds.map((e) => ({ ...e, selected: e.id === edge.id }))
+      );
       // Find the midpoint between the two connected tables and center on it
       // offset left by ~200px so the edit panel (right side) doesn't cover the relation
       const m = modelRef.current;
@@ -238,7 +273,7 @@ export function DiagramCanvas() {
         detail: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
       }));
     },
-    [selectRelation]
+    [selectRelation, setEdges]
   );
 
   const handlePaneClick = useCallback(() => {
@@ -246,12 +281,20 @@ export function DiagramCanvas() {
     selectRelation(null);
     selectRegion(null);
     selectComment(null);
-  }, [selectTable, selectRelation, selectRegion, selectComment]);
+    setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
+  }, [selectTable, selectRelation, selectRegion, selectComment, setEdges]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Make the ReactFlow attribution readable in dark theme */}
-      <style>{`.react-flow__attribution { color: ${t.textFaint} !important; } .react-flow__attribution a { color: ${t.textMuted} !important; }`}</style>
+      {/* region-node-wrapper: disable pointer events on the RF wrapper so edges/tables inside remain clickable */}
+      <style>{`
+        .react-flow__attribution { color: ${t.textFaint} !important; }
+        .react-flow__attribution a { color: ${t.textMuted} !important; }
+        .region-node-wrapper { pointer-events: none !important; }
+        .region-node-wrapper .region-interactive { pointer-events: all; }
+        .region-node-wrapper .react-flow__resize-control { pointer-events: all; }
+      `}</style>
       <CardinalityMarkers />
       <ReactFlow
         nodes={nodes}
@@ -272,7 +315,7 @@ export function DiagramCanvas() {
         minZoom={0.1}
         maxZoom={3}
       >
-        <ReactFlowControls />
+        <ReactFlowControls setNodes={setNodes} selectRegion={selectRegion} />
         <Background />
         <Controls />
         {showMinimap && <MiniMap zoomable pannable style={{ bottom: 8, right: 8 }} />}

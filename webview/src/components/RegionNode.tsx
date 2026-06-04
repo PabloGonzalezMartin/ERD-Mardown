@@ -1,6 +1,8 @@
-import { memo, useState, useRef, useCallback, useEffect } from 'react';
+import { memo, useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NodeResizer, type NodeProps, type ResizeParams } from '@xyflow/react';
 import { useDiagramStore } from '../store/diagramStore';
+import { useUiStore } from '../store/uiStore';
 import type { RegionNodeType } from '../util/xyflowAdapters';
 
 // Shared set of region IDs currently being resized — used to suppress
@@ -12,6 +14,8 @@ const DEFAULT_BG_COLOR     = 'rgba(120,120,180,0.06)';
 const DEFAULT_BORDER_COLOR = '#888888';
 const DEFAULT_FONT_SIZE    = 13;
 const DEFAULT_FONT_FAMILY  = 'inherit';
+
+const TITLEBAR_H = 28; // px — height of the drag handle / title bar
 
 const TEXT_COLORS = [
   '#aaaaaa', '#ffffff', '#333333',
@@ -54,16 +58,30 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
   const updateRegion       = useDiagramStore((s) => s.updateRegion);
   const updateRegionLayout = useDiagramStore((s) => s.updateRegionLayout);
   const deleteRegion       = useDiagramStore((s) => s.deleteRegion);
+  const theme              = useUiStore((s) => s.theme);
+
+  const isDark     = theme === 'dark';
+  const titleBg    = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+  const iconColor  = isDark ? '#cccccc' : '#555555';
+  const mutedColor = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)';
 
   const [editing, setEditing]           = useState(false);
   const [draft, setDraft]               = useState('');
   const [styleBarOpen, setStyleBarOpen] = useState(false);
-  const inputRef      = useRef<HTMLInputElement>(null);
-  const nodeRef       = useRef<HTMLDivElement>(null);
-  const styleBarRef   = useRef<HTMLDivElement>(null);
-  const styleBtnRef   = useRef<HTMLButtonElement>(null);
+  const [titleHovered, setTitleHovered] = useState(false);
+  const [pickerPos, setPickerPos]       = useState({ x: 0, y: 0 });
+  const inputRef    = useRef<HTMLInputElement>(null);
+  const nodeRef     = useRef<HTMLDivElement>(null);
+  const styleBarRef = useRef<HTMLDivElement>(null);
+  const styleBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Close style bar when clicking outside the picker panel and its toggle button
+  // Recompute picker position whenever it opens or the node moves
+  useLayoutEffect(() => {
+    if (!styleBarOpen || !styleBtnRef.current) return;
+    const r = styleBtnRef.current.getBoundingClientRect();
+    setPickerPos({ x: r.left, y: r.bottom + 4 });
+  }, [styleBarOpen]);
+
   useEffect(() => {
     if (!styleBarOpen) return;
     const onDown = (e: MouseEvent) => {
@@ -127,99 +145,161 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
   return (
     <div
       ref={nodeRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        border: borderStyle,
-        borderRadius: 6,
-        background: bgColor,
-        boxSizing: 'border-box',
-        pointerEvents: 'all',
-        position: 'relative',
-      }}
-      onMouseDown={(e) => { if (styleBarOpen) e.stopPropagation(); }}
-      onDoubleClick={(e) => { e.stopPropagation(); startEdit(); }}
+      style={{ width: '100%', height: '100%', position: 'relative' }}
     >
       <NodeResizer
         isVisible={selected}
-        minWidth={120}
-        minHeight={80}
+        minWidth={160}
+        minHeight={TITLEBAR_H + 40}
         onResizeStart={handleResizeStart}
         onResizeEnd={handleResizeEnd}
       />
 
-      {/* Style toolbar — show only when selected and not editing */}
-      {selected && !editing && (
-        <div
-          className="nodrag nopan"
-          style={{ position: 'absolute', top: -30, right: 0, display: 'flex', gap: 4, zIndex: 10 }}
-        >
-          <button
-            ref={styleBtnRef}
-            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setStyleBarOpen((o) => !o); }}
-            style={{
-              fontSize: 13, padding: '2px 8px', cursor: 'pointer',
-              border: '1px solid #bbb', borderRadius: 4,
-              background: styleBarOpen ? '#4a90d9' : '#f0f0f0',
-              color: styleBarOpen ? '#fff' : '#555',
-              lineHeight: 1.4,
-            }}
-            title="Style options"
-          >🎨</button>
-          <button
-            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); deleteRegion(regionId); }}
-            style={{
-              fontSize: 13, padding: '2px 7px', cursor: 'pointer',
-              border: 'none', borderRadius: 4,
-              background: '#e55', color: '#fff',
-              lineHeight: 1.4,
-            }}
-            title="Delete region"
-          >✕</button>
-        </div>
-      )}
+      {/* Outer border + background — pointer events off so interior stays clickable */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        border: borderStyle,
+        borderRadius: 6,
+        background: bgColor,
+        boxSizing: 'border-box',
+        pointerEvents: 'none',
+      }} />
 
-      {/* Style picker panel */}
-      {styleBarOpen && !editing && (
+      {/* ── Title bar ── drag handle + label + actions ── */}
+      <div
+        className="region-interactive"
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          height: TITLEBAR_H,
+          borderRadius: '4px 4px 0 0',
+          background: titleBg,
+          borderBottom: `1px solid ${selected ? '#4a90d9' : borderColor}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '0 6px',
+          cursor: 'grab',
+          boxSizing: 'border-box',
+          overflow: 'visible',
+        }}
+        onMouseEnter={() => setTitleHovered(true)}
+        onMouseLeave={() => setTitleHovered(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          window.dispatchEvent(new CustomEvent('er:selectRegion', { detail: { regionId } }));
+        }}
+      >
+        {/* Drag hint dots */}
+        <span style={{ color: mutedColor, fontSize: 12, letterSpacing: 1, flexShrink: 0, userSelect: 'none' }}>
+          ⠿
+        </span>
+
+        {/* Label / edit input */}
+        {editing ? (
+          <input
+            ref={inputRef}
+            className="nodrag nopan"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={handleKeyDown}
+            style={{
+              flex: 1, minWidth: 0,
+              background: 'rgba(0,0,0,0.5)',
+              color: '#eee',
+              border: '1px solid #4a90d9',
+              borderRadius: 3,
+              padding: '1px 5px',
+              fontSize,
+              fontFamily,
+              fontWeight: 600,
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+        ) : (
+          <span
+            onDoubleClick={(e) => { e.stopPropagation(); startEdit(); }}
+            style={{
+              flex: 1, minWidth: 0,
+              fontSize,
+              fontFamily,
+              fontWeight: 600,
+              color: selected ? '#4a90d9' : textColor,
+              userSelect: 'none',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              cursor: 'grab',
+            }}
+          >
+            {region.label}
+          </span>
+        )}
+
+        {/* Action buttons — visible on hover or when style picker is open */}
+        {!editing && (titleHovered || styleBarOpen) && (
+          <div className="nodrag nopan" style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+            {/* Style picker toggle */}
+            <button
+              ref={styleBtnRef}
+              title="Style options"
+              onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setStyleBarOpen((o) => !o); }}
+              style={{ ...iconBtn, background: styleBarOpen ? '#4a90d9' : (iconBtn.background as string) }}
+            >
+              <span style={{ fontSize: 12, lineHeight: 1, color: styleBarOpen ? '#fff' : iconColor }}>🎨</span>
+            </button>
+
+            {/* Delete */}
+            <button
+              title="Delete region"
+              onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); deleteRegion(regionId); }}
+              style={{ ...iconBtn, background: '#e55' }}
+            >
+              <span style={{ fontSize: 11, lineHeight: 1, color: '#fff' }}>✕</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Style picker panel — rendered via portal so it escapes ReactFlow's stacking context */}
+      {styleBarOpen && !editing && createPortal(
         <div
           ref={styleBarRef}
-          className="nodrag nopan nowheel"
           onMouseDown={(e) => e.stopPropagation()}
           style={{
-            position: 'absolute',
-            top: 8,
-            right: 0,
-            marginTop: 4,
-            background: '#fff',
-            border: '1px solid #ddd',
+            position: 'fixed',
+            left: pickerPos.x,
+            top: pickerPos.y,
+            background: isDark ? '#2a2a2a' : '#fff',
+            border: `1px solid ${isDark ? '#444' : '#ddd'}`,
             borderRadius: 4,
             padding: '8px 10px',
-            boxShadow: '0 2px 10px rgba(0,0,0,.2)',
-            zIndex: 20,
+            boxShadow: '0 4px 20px rgba(0,0,0,.35)',
+            zIndex: 99999,
             minWidth: 220,
+            color: isDark ? '#eee' : '#333',
           }}
         >
-          {/* Font size */}
           <div style={pickerLabel}>Font size</div>
           <div style={{ display: 'flex', gap: 3, marginBottom: 8 }}>
             {FONT_SIZES.map((s) => (
               <button key={s} onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); applyStyle({ fontSize: s }); }}
-                style={{ ...swatchBtn, border: fontSize === s ? '2px solid #4a90d9' : '1px solid #ccc', background: fontSize === s ? '#e8f0fe' : '#fafafa', minWidth: 28 }}
+                style={{ ...swatchBtn, border: fontSize === s ? '2px solid #4a90d9' : '1px solid #ccc', background: fontSize === s ? '#e8f0fe' : (isDark ? '#3a3a3a' : '#fafafa'), minWidth: 28, color: isDark ? '#eee' : '#333' }}
               >{s}</button>
             ))}
           </div>
 
-          {/* Font family */}
           <div style={pickerLabel}>Font</div>
           <div style={{ display: 'flex', gap: 3, marginBottom: 8, flexWrap: 'wrap' }}>
             {FONT_FAMILIES.map(({ label, value }) => (
               <button key={value} onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); applyStyle({ fontFamily: value }); }}
-                style={{ ...swatchBtn, border: fontFamily === value ? '2px solid #4a90d9' : '1px solid #ccc', background: fontFamily === value ? '#e8f0fe' : '#fafafa', fontFamily: value }}
+                style={{ ...swatchBtn, border: fontFamily === value ? '2px solid #4a90d9' : '1px solid #ccc', background: fontFamily === value ? '#e8f0fe' : (isDark ? '#3a3a3a' : '#fafafa'), fontFamily: value, color: isDark ? '#eee' : '#333' }}
               >{label}</button>
             ))}
           </div>
 
-          {/* Text color */}
           <div style={pickerLabel}>Text color</div>
           <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
             {TEXT_COLORS.map((c) => (
@@ -230,7 +310,6 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
             ))}
           </div>
 
-          {/* Border color */}
           <div style={pickerLabel}>Border color</div>
           <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
             {BORDER_COLORS.map((c) => (
@@ -241,7 +320,6 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
             ))}
           </div>
 
-          {/* Background */}
           <div style={pickerLabel}>Background</div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {BG_COLORS.map(({ value }) => (
@@ -251,63 +329,29 @@ export const RegionNode = memo(({ data, selected }: NodeProps<RegionNodeType>) =
               />
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-
-      {/* Label */}
-      <div style={{ position: 'absolute', top: 6, left: 10, right: 10 }}>
-        {editing ? (
-          <input
-            ref={inputRef}
-            className="nodrag nopan"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commitEdit}
-            onKeyDown={handleKeyDown}
-            style={{
-              width: '100%',
-              background: 'rgba(0,0,0,0.6)',
-              color: '#eee',
-              border: '1px solid #4a90d9',
-              borderRadius: 3,
-              padding: '2px 6px',
-              fontSize,
-              fontFamily,
-              fontWeight: 600,
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-        ) : (
-          <span
-            style={{
-              fontSize,
-              fontFamily,
-              fontWeight: 600,
-              color: (selected && !styleBarOpen) ? '#4a90d9' : textColor,
-              userSelect: 'none',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: 'block',
-            }}
-          >
-            {region.label}
-          </span>
-        )}
-      </div>
     </div>
   );
 });
 
 RegionNode.displayName = 'RegionNode';
 
-const pickerLabel: React.CSSProperties = { fontSize: 10, color: '#666', marginBottom: 4 };
+const pickerLabel: React.CSSProperties = { fontSize: 10, color: '#888', marginBottom: 4 };
+
+const iconBtn: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  width: 20, height: 20, padding: 0, cursor: 'pointer',
+  border: 'none', borderRadius: 3,
+  background: 'transparent',
+  flexShrink: 0,
+};
 
 const swatchBtn: React.CSSProperties = {
   height: 22, padding: '0 4px',
   borderRadius: 3, cursor: 'pointer',
-  fontSize: 10, color: '#333',
+  fontSize: 10,
 };
 
 const colorSwatch: React.CSSProperties = {

@@ -13,6 +13,7 @@ export function modelToNodes(model: DiagramModel): (TableNodeType | RegionNodeTy
     type: 'regionNode' as const,
     position: { x: r.x, y: r.y },
     style: { width: r.width, height: r.height },
+    className: 'region-node-wrapper',
     zIndex: 0,
     data: { regionId: r.id },
   }));

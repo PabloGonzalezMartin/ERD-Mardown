@@ -15,7 +15,7 @@ import '@xyflow/react/dist/style.css';
 import { useDiagramStore } from '../store/diagramStore';
 import { useUiStore } from '../store/uiStore';
 import { getTheme } from '../util/theme';
-import { modelToNodes, modelToEdges } from '../util/xyflowAdapters';
+import { modelToNodes, modelToEdges, computeTableWidth } from '../util/xyflowAdapters';
 import { TableNode } from './TableNode';
 import { RelationEdge } from './RelationEdge';
 import { CardinalityMarkers } from './CardinalityMarkers';
@@ -160,13 +160,24 @@ export function DiagramCanvas() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model.tables, model.layout.tables, model.layout.regions, model.layout.comments]);
 
+  // When relations change: wait 30ms for ReactFlow to register the new per-relation handles
+  // that TableNode renders for each relation. The two deps are intentionally separate so that
+  // a model.layout.tables update (e.g. from a dimension change after addRelation) cannot
+  // cancel/restart this timer and indefinitely delay the edge appearing.
   useEffect(() => {
-    // Small delay only on first mount / bulk import so handles are registered
-    // For position changes (drag/layout) we re-run immediately after the delay
     const id = setTimeout(() => setEdges(modelToEdges(modelRef.current, headersOnly)), 30);
     return () => clearTimeout(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model.relations, model.layout.tables, headersOnly]);
+  }, [model.relations, headersOnly]);
+
+  // When table positions change: re-route edges. Use 30ms to match the relations effect so both
+  // fire after ReactFlow's rAF-based handle registration (~16ms). Kept separate so layout changes
+  // don't cancel/restart the relations timer.
+  useEffect(() => {
+    const id = setTimeout(() => setEdges(modelToEdges(modelRef.current, headersOnly)), 30);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model.layout.tables]);
 
   const handleNodesChange = useCallback(
     (changes: any[]) => {
@@ -189,10 +200,12 @@ export function DiagramCanvas() {
           const m = modelRef.current;
           const tableLayout = m.layout.tables.find((l) => l.tableId === change.id);
           if (tableLayout) {
+            const table = m.tables.find((t) => t.id === change.id);
+            const tableW = table ? computeTableWidth(table, m.dictionary) : tableLayout.width;
             // Immediately re-route edges using the new position before model update cycle
-            const overrides = new Map([[change.id, { x: change.position.x, width: tableLayout.width }]]);
+            const overrides = new Map([[change.id, { x: change.position.x, width: tableW }]]);
             setEdges(modelToEdges(m, headersOnly, overrides));
-            updateLayout(change.id, change.position.x, change.position.y, tableLayout.width);
+            updateLayout(change.id, change.position.x, change.position.y, tableW);
           } else {
             const regionLayout = m.layout.regions.find((r) => r.id === change.id);
             if (regionLayout && !resizingRegions.has(change.id)) {
@@ -209,9 +222,8 @@ export function DiagramCanvas() {
           const m = modelRef.current;
           const tableLayout = m.layout.tables.find((l) => l.tableId === change.id);
           if (tableLayout) {
-            if (Math.abs(tableLayout.width - change.dimensions.width) > 1) {
-              updateLayout(change.id, tableLayout.x, tableLayout.y, change.dimensions.width);
-            }
+            // Width is always computed from content — ignore resize events for tables
+            if (false) {
           }
           // Region dimensions are saved via onResizeEnd in RegionNode directly
         }
@@ -263,7 +275,7 @@ export function DiagramCanvas() {
         if (layout && table) {
           const h = 42 + table.columns.length * 26;
           window.dispatchEvent(new CustomEvent('er:centerOnTable', {
-            detail: { x: layout.x, y: layout.y, width: layout.width ?? 240, height: h },
+            detail: { x: layout.x, y: layout.y, width: computeTableWidth(table, m.dictionary), height: h },
           }));
         }
       }
@@ -294,7 +306,9 @@ export function DiagramCanvas() {
       // Bounding box enclosing both tables
       const minX = Math.min(fromLayout.x, toLayout.x);
       const minY = Math.min(fromLayout.y, toLayout.y);
-      const maxX = Math.max(fromLayout.x + (fromLayout.width ?? 240), toLayout.x + (toLayout.width ?? 240));
+      const fromW = fromTable ? computeTableWidth(fromTable, m.dictionary) : (fromLayout.width ?? 240);
+      const toW   = toTable   ? computeTableWidth(toTable,   m.dictionary) : (toLayout.width   ?? 240);
+      const maxX = Math.max(fromLayout.x + fromW, toLayout.x + toW);
       const maxY = Math.max(fromLayout.y + fromH, toLayout.y + toH);
       window.dispatchEvent(new CustomEvent('er:centerOnRelation', {
         detail: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },

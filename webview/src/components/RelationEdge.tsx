@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -38,6 +38,17 @@ export function RelationEdge({
   const relationFocusActive = Boolean(selectedRelationId);
   const isThisSelected      = selectedRelationId === relationId;
   const [commentOpen, setCommentOpen] = useState(false);
+
+  // Close comment popover when clicking anywhere outside this edge
+  useEffect(() => {
+    const onClose = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { exceptEdgeId?: string } | undefined;
+      if (detail?.exceptEdgeId === id) return;
+      setCommentOpen(false);
+    };
+    window.addEventListener('er:closePopovers', onClose);
+    return () => window.removeEventListener('er:closePopovers', onClose);
+  }, [id]);
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX, sourceY, sourcePosition,

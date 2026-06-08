@@ -264,6 +264,8 @@ export function DiagramCanvas() {
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
+      // Close popovers on all OTHER nodes/edges; the clicked node handles its own toggle
+      window.dispatchEvent(new CustomEvent('er:closePopovers', { detail: { exceptNodeId: node.id } }));
       if (node.type === 'regionNode') {
         selectRegion(node.id);
       } else if (node.type === 'commentNode') {
@@ -286,6 +288,8 @@ export function DiagramCanvas() {
 
   const handleEdgeClick = useCallback(
     (_: React.MouseEvent, edge: any) => {
+      // Close popovers on all nodes and all other edges
+      window.dispatchEvent(new CustomEvent('er:closePopovers', { detail: { exceptEdgeId: edge.id } }));
       selectRelation(edge.id);
       // Mark the clicked edge as selected in ReactFlow state so RelationEdge receives selected=true
       setEdges((eds) =>
@@ -324,6 +328,8 @@ export function DiagramCanvas() {
     selectRegion(null);
     selectComment(null);
     setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
+    // Close all comment popovers when clicking the canvas background
+    window.dispatchEvent(new CustomEvent('er:closePopovers'));
   }, [selectTable, selectRelation, selectRegion, selectComment, setEdges]);
 
   return (

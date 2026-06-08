@@ -44,6 +44,17 @@ export const TableNode = memo(({ data, selected }: NodeProps<TableNodeType>) => 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relations.length]);
 
+  // Close note popovers when any click outside this node is detected
+  useEffect(() => {
+    const onClose = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { exceptNodeId?: string } | undefined;
+      if (detail?.exceptNodeId === tableId) return;
+      setOpenNote(null);
+    };
+    window.addEventListener('er:closePopovers', onClose);
+    return () => window.removeEventListener('er:closePopovers', onClose);
+  }, [tableId]);
+
   if (!table) return null;
 
   // Derive FK role for each column from relations

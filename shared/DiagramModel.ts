@@ -128,6 +128,7 @@ export interface CommentLayout {
   text: string;
   x: number;
   y: number;
+  width?: number;
   textColor?: string;
   bgColor?: string;
   fontSize?: number;

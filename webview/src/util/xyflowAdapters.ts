@@ -89,6 +89,7 @@ export function modelToNodes(model: DiagramModel): (TableNodeType | RegionNodeTy
     id: c.id,
     type: 'commentNode' as const,
     position: { x: c.x, y: c.y },
+    style: c.width ? { width: c.width } : undefined,
     zIndex: 2,
     data: { commentId: c.id },
   }));

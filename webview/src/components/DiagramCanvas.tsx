@@ -222,8 +222,9 @@ export function DiagramCanvas() {
           const m = modelRef.current;
           const tableLayout = m.layout.tables.find((l) => l.tableId === change.id);
           if (tableLayout) {
-            // Width is always computed from content — ignore resize events for tables
-            if (false) {
+            if (Math.abs(tableLayout.width - change.dimensions.width) > 1) {
+              updateLayout(change.id, tableLayout.x, tableLayout.y, change.dimensions.width);
+            }
           }
           // Region dimensions are saved via onResizeEnd in RegionNode directly
         }

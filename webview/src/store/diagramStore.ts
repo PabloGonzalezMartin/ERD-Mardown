@@ -52,7 +52,7 @@ interface DiagramState {
   addComment: (x: number, y: number, style?: { fontSize?: number; fontFamily?: string; textColor?: string; bgColor?: string }) => void;
   updateComment: (id: string, patch: Partial<Pick<CommentLayout, 'text' | 'textColor' | 'bgColor' | 'fontSize' | 'fontFamily'>>) => void;
   deleteComment: (id: string) => void;
-  updateCommentLayout: (id: string, x: number, y: number) => void;
+  updateCommentLayout: (id: string, x: number, y: number, width?: number) => void;
 
   addIndex: (tableId: string) => void;
   updateIndex: (tableId: string, indexId: string, patch: Partial<Omit<TableIndex, 'id'>>) => void;
@@ -352,14 +352,14 @@ export const useDiagramStore = create<DiagramState>()(
           },
         })),
 
-      updateCommentLayout: (id, x, y) =>
+      updateCommentLayout: (id, x, y, width) =>
         set((state) => ({
           model: {
             ...state.model,
             layout: {
               ...state.model.layout,
               comments: (state.model.layout.comments ?? []).map((c) =>
-                c.id === id ? { ...c, x, y } : c
+                c.id === id ? { ...c, x, y, ...(width !== undefined && { width }) } : c
               ),
             },
           },

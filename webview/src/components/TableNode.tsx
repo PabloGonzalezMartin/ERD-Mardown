@@ -58,15 +58,13 @@ export const TableNode = memo(({ data, selected }: NodeProps<TableNodeType>) => 
     }
   }
 
-  // Row height for a column = max(ROW_H, max(srcCount, tgtCount) * ROW_H)
-  // capped at 4 connections to avoid runaway heights
+  // Row height = (srcCount + tgtCount) slots, minimum 1.
+  // Combined count ensures src and tgt handles never share a vertical position,
+  // regardless of which physical side (left/right) each connection ends up on.
   const colRowH = (colId: string) => {
-    const n = Math.min(4, Math.max(
-      srcRelsByCol.get(colId)?.length ?? 0,
-      tgtRelsByCol.get(colId)?.length ?? 0,
-      1,
-    ));
-    return n * ROW_H;
+    const srcN = srcRelsByCol.get(colId)?.length ?? 0;
+    const tgtN = tgtRelsByCol.get(colId)?.length ?? 0;
+    return Math.max(srcN + tgtN, 1) * ROW_H;
   };
 
   // Cumulative top offset for each column
@@ -184,9 +182,10 @@ export const TableNode = memo(({ data, selected }: NodeProps<TableNodeType>) => 
           );
         });
 
-        // Per-relation target handles
+        // Per-relation target handles — offset by srcRels.length so they occupy
+        // distinct vertical slots and never collide with source handles on the same side.
         tgtRels.forEach((relId, i) => {
-          const top = rowTop + ROW_H * i + ROW_H / 2;
+          const top = rowTop + ROW_H * (srcRels.length + i) + ROW_H / 2;
           const s = { ...handleStyle, top, opacity: 0 };
           handles.push(
             <Handle key={`tl-${col.id}-${relId}`} id={`col-${col.id}-rel-${relId}-left`}  type="target" position={Position.Left}  style={s} />,

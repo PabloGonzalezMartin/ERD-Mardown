@@ -316,9 +316,9 @@ function DictIcon({ color }: { color: string }) {
       {/* dot inside top tag */}
       <circle cx="10.5" cy="5" r="0.9" fill={color} />
       {/* bottom tag */}
-      <path d="M2 10h6l3 3-3 3H2v-6z" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M2 9h6l3 3-3 3H2v-6z" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
       {/* dot inside bottom tag */}
-      <circle cx="9.5" cy="13" r="0.9" fill={color} />
+      <circle cx="9.5" cy="12" r="0.9" fill={color} />
     </svg>
   );
 }

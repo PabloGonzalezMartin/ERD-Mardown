@@ -1,7 +1,62 @@
 import { type Node, type Edge } from '@xyflow/react';
-import { DiagramModel } from '@shared/DiagramModel';
+import { DiagramModel, type Table, type DictionaryEntry } from '@shared/DiagramModel';
 
 // ReactFlow v12: generic param must be the full Node/Edge type
+
+const MIN_TABLE_W = 180;
+const MAX_TABLE_W = 480;
+
+// Singleton canvas context for text measurement (browser only)
+let _ctx: CanvasRenderingContext2D | null = null;
+function measureText(text: string, font: string): number {
+  if (!_ctx) {
+    const canvas = document.createElement('canvas');
+    _ctx = canvas.getContext('2d');
+    if (!_ctx) return text.length * 8; // fallback if canvas unavailable
+  }
+  _ctx.font = font;
+  return _ctx.measureText(text).width;
+}
+
+export function computeTableWidth(table: Table, dict: DictionaryEntry[]): number {
+  const HEADER_FONT    = 'bold 16px sans-serif';
+  const SUBTITLE_FONT  = '400 10px sans-serif'; // physical name subtitle in logical mode
+  const COL_FONT       = '12px sans-serif';
+  const TYPE_FONT      = '11px sans-serif';
+
+  // Header chrome: left pad(10) + right pad(8) + gap(4)
+  // + status badge (~22px) if not implemented + comment button (~28px) if has comment
+  const statusBadgeW = (table.status && table.status !== 'implemented') ? 22 : 0;
+  const commentBtnW  = table.comment ? 28 : 0;
+  const HEADER_CHROME = 22 + statusBadgeW + commentBtnW;
+
+  // Column chrome: left pad(10) + key icon(16) + gap after icon(5) + right pad(8) + gap before type(5)
+  const COL_CHROME = 44;
+
+  // Header: always fits fully — no upper cap applied here
+  const headerW = Math.max(
+    measureText(table.logicalName,  HEADER_FONT),
+    measureText(table.physicalName, HEADER_FONT),
+    measureText(table.physicalName, SUBTITLE_FONT),
+  ) + HEADER_CHROME;
+
+  // Column rows: name + type badge + optional note icon — capped at MAX_TABLE_W
+  let colMaxW = MIN_TABLE_W;
+  for (const col of table.columns) {
+    const nameW = Math.max(
+      measureText(col.logicalName,  COL_FONT),
+      measureText(col.physicalName, COL_FONT),
+    );
+    const entry = dict.find((d) => d.id === col.dictionaryId);
+    const typeText = entry ? (entry.length ? `${entry.name}(${entry.length})` : entry.name) : '';
+    const typeW    = typeText ? measureText(typeText, TYPE_FONT) : 0;
+    const noteW    = col.designNote ? 20 : 0;
+    colMaxW = Math.max(colMaxW, nameW + typeW + noteW + COL_CHROME);
+  }
+
+  // Header is never truncated; columns are capped at MAX_TABLE_W
+  return Math.round(Math.max(headerW, Math.min(MAX_TABLE_W, colMaxW)));
+}
 export type TableNodeType = Node<{ tableId: string }, 'tableNode'>;
 export type RelationEdgeType = Edge<{ relationId: string }, 'relationEdge'>;
 export type RegionNodeType = Node<{ regionId: string }, 'regionNode'>;
@@ -24,7 +79,7 @@ export function modelToNodes(model: DiagramModel): (TableNodeType | RegionNodeTy
       id: table.id,
       type: 'tableNode' as const,
       position: { x: layoutEntry?.x ?? 100, y: layoutEntry?.y ?? 100 },
-      style: { width: layoutEntry?.width ?? 240 },
+      style: { width: computeTableWidth(table, model.dictionary) },
       zIndex: 1,
       data: { tableId: table.id },
     };

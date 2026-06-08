@@ -1,5 +1,5 @@
-import { memo, useState, useCallback } from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { memo, useState, useCallback, useEffect } from 'react';
+import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react';
 import { useDiagramStore } from '../store/diagramStore';
 import { useUiStore } from '../store/uiStore';
 import type { TableNodeType } from '../util/xyflowAdapters';
@@ -34,6 +34,15 @@ export const TableNode = memo(({ data, selected }: NodeProps<TableNodeType>) => 
   const toggleNote = useCallback((id: string) => {
     setOpenNote((prev) => (prev === id ? null : id));
   }, []);
+
+  // Tell ReactFlow to re-read handle positions whenever this table's relation count changes.
+  // ReactFlow registers handles via requestAnimationFrame (~16ms); our 30ms edge-sync timeout
+  // in DiagramCanvas fires after that, ensuring newly added handles are found when setEdges runs.
+  const updateNodeInternals = useUpdateNodeInternals();
+  useEffect(() => {
+    updateNodeInternals(tableId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relations.length]);
 
   if (!table) return null;
 
@@ -145,8 +154,6 @@ export const TableNode = memo(({ data, selected }: NodeProps<TableNodeType>) => 
       onDoubleClick={(e) => { e.stopPropagation(); selectTable(tableId); }}
       onClick={() => setOpenNote(null)}
     >
-      <NodeResizer isVisible={selected} minWidth={160} minHeight={60} />
-
       {/* Center fallback handles — explicit IDs per side */}
       <Handle type="target" position={Position.Left}  id="center-left"  style={handleStyle} />
       <Handle type="target" position={Position.Right} id="center-right" style={{ ...handleStyle, opacity: 0 }} />

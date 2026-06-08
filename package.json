@@ -2,7 +2,7 @@
   "name": "erd-markdown",
   "displayName": "ERD Markdown",
   "description": "Interactive ER diagram editor stored as plain diffable .ermd files. Crow's foot notation, DDL export, CSV import, schema versioning, and dark/light theme support.",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "publisher": "PabloGonzalezMartin",
   "icon": "icon.png",
   "repository": {
@@ -12,15 +12,24 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
-  "activationEvents": ["onLanguage:ermd"],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:ermd"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "ermd",
-        "extensions": [".ermd"],
-        "aliases": ["ER Diagram", "ermd"],
+        "extensions": [
+          ".ermd"
+        ],
+        "aliases": [
+          "ER Diagram",
+          "ermd"
+        ],
         "icon": {
           "light": "./images/file-icon.png",
           "dark": "./images/file-icon.png"
@@ -63,7 +72,12 @@
       "properties": {
         "erd-markdown.ddl.dialect": {
           "type": "string",
-          "enum": ["mysql", "postgresql", "sqlite", "sqlserver"],
+          "enum": [
+            "mysql",
+            "postgresql",
+            "sqlite",
+            "sqlserver"
+          ],
           "enumDescriptions": [
             "MySQL / MariaDB",
             "PostgreSQL",

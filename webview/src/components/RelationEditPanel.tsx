@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { CardinalityEnd, CARDINALITY_END_LABELS } from '@shared/DiagramModel';
 import { useDiagramStore } from '../store/diagramStore';
 import { useUiStore } from '../store/uiStore';
@@ -11,12 +12,37 @@ const CARDINALITY_ENDS: { value: CardinalityEnd; symbol: string }[] = [
 
 export function RelationEditPanel() {
   const selectedRelationId = useUiStore((s) => s.selectedRelationId);
-  const selectRelation = useUiStore((s) => s.selectRelation);
+  const pendingRelationId  = useUiStore((s) => s.pendingRelationId);
+  const selectRelation     = useUiStore((s) => s.selectRelation);
+  const setPendingRelation = useUiStore((s) => s.setPendingRelation);
 
   const relation       = useDiagramStore((s) => s.model.relations.find((r) => r.id === selectedRelationId));
   const tables         = useDiagramStore((s) => s.model.tables);
   const updateRelation = useDiagramStore((s) => s.updateRelation);
   const deleteRelation = useDiagramStore((s) => s.deleteRelation);
+
+  // Track latest column assignments so we can check them after the panel unmounts
+  const latestColsRef = useRef<{ from: string; to: string } | null>(null);
+  if (relation) latestColsRef.current = { from: relation.fromColumnId, to: relation.toColumnId };
+
+  // When the panel closes for a pending relation, delete it if columns were never assigned
+  useEffect(() => {
+    if (!selectedRelationId && pendingRelationId) {
+      const cols = latestColsRef.current;
+      if (!cols || !cols.from || !cols.to) {
+        deleteRelation(pendingRelationId);
+      }
+      setPendingRelation(null);
+    }
+  }, [selectedRelationId, pendingRelationId, deleteRelation, setPendingRelation]);
+
+  // Auto-focus the From column select when the panel opens for a pending relation
+  const fromSelectRef = useRef<HTMLSelectElement>(null);
+  useEffect(() => {
+    if (pendingRelationId && selectedRelationId === pendingRelationId) {
+      fromSelectRef.current?.focus();
+    }
+  }, [pendingRelationId, selectedRelationId]);
 
   if (!selectedRelationId || !relation) return null;
 
@@ -86,6 +112,7 @@ export function RelationEditPanel() {
         <div style={rowStyle}>
           <label style={labelStyle}>From (column)</label>
           <select
+            ref={fromSelectRef}
             style={inputStyle}
             value={relation.fromColumnId}
             onChange={(e) => updateRelation(selectedRelationId, { fromColumnId: e.target.value })}

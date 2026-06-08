@@ -26,6 +26,7 @@ interface UiState {
   searchQuery: string;
   statusFilter: 'all' | 'planned' | 'proposed';
   lastCommentStyle: { fontSize: number; fontFamily: string; textColor: string; bgColor: string };
+  pendingRelationId: string | null;
 
   selectTable: (id: string | null) => void;
   selectRelation: (id: string | null) => void;
@@ -50,6 +51,7 @@ interface UiState {
   setSearchQuery: (query: string) => void;
   setStatusFilter: (filter: UiState['statusFilter']) => void;
   setLastCommentStyle: (style: Partial<UiState['lastCommentStyle']>) => void;
+  setPendingRelation: (id: string | null) => void;
   toggleTheme: () => void;
 }
 
@@ -75,6 +77,7 @@ export const useUiStore = create<UiState>()((set) => ({
   headersOnly: false,
   searchQuery: '',
   statusFilter: 'all',
+  pendingRelationId: null,
   lastCommentStyle: { fontSize: 16, fontFamily: 'inherit', textColor: '#333333', bgColor: 'transparent' },
 
   selectTable: (id) => set({ selectedTableId: id, selectedRelationId: null, selectedRegionId: null, selectedCommentId: null }),
@@ -100,5 +103,6 @@ export const useUiStore = create<UiState>()((set) => ({
   setSearchQuery: (query) => set({ searchQuery: query }),
   setStatusFilter: (filter) => set({ statusFilter: filter }),
   setLastCommentStyle: (style) => set((s) => ({ lastCommentStyle: { ...s.lastCommentStyle, ...style } })),
+  setPendingRelation: (id) => set({ pendingRelationId: id }),
   toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
 }));

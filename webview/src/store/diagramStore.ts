@@ -26,7 +26,7 @@ interface DiagramState {
   deleteColumn: (tableId: string, columnId: string) => void;
   reorderColumns: (tableId: string, fromIndex: number, toIndex: number) => void;
 
-  addRelation: (rel: Omit<Relation, 'id'>) => void;
+  addRelation: (rel: Omit<Relation, 'id'> & { id?: string }) => void;
   updateRelation: (relationId: string, patch: Partial<Omit<Relation, 'id'>>) => void;
   deleteRelation: (relationId: string) => void;
 
@@ -201,7 +201,7 @@ export const useDiagramStore = create<DiagramState>()(
       addRelation: (rel) =>
         updateModel(set, (m) => ({
           ...m,
-          relations: [...m.relations, { ...rel, id: genId('rel') }],
+          relations: [...m.relations, { ...rel, id: rel.id ?? genId('rel') }],
         })),
 
       updateRelation: (relationId, patch) =>

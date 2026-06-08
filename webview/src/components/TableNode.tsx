@@ -35,14 +35,19 @@ export const TableNode = memo(({ data, selected }: NodeProps<TableNodeType>) => 
     setOpenNote((prev) => (prev === id ? null : id));
   }, []);
 
-  // Tell ReactFlow to re-read handle positions whenever this table's relation count changes.
+  // Tell ReactFlow to re-read handle positions whenever the handles for this table change.
+  // This covers both adding/removing relations AND reassigning columns on an existing relation —
+  // the latter changes handle IDs without changing relations.length, which was the previous bug.
   // ReactFlow registers handles via requestAnimationFrame (~16ms); our 30ms edge-sync timeout
   // in DiagramCanvas fires after that, ensuring newly added handles are found when setEdges runs.
   const updateNodeInternals = useUpdateNodeInternals();
+  const handlesKey = relations
+    .map((r) => `${r.id}:${r.fromTableId === tableId ? r.fromColumnId : ''}:${r.toTableId === tableId ? r.toColumnId : ''}`)
+    .join('|');
   useEffect(() => {
     updateNodeInternals(tableId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [relations.length]);
+  }, [handlesKey]);
 
   // Close note popovers when any click outside this node is detected
   useEffect(() => {

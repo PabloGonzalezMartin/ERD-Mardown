@@ -16,6 +16,7 @@ import { useDiagramStore } from '../store/diagramStore';
 import { useUiStore } from '../store/uiStore';
 import { getTheme } from '../util/theme';
 import { modelToNodes, modelToEdges, computeTableWidth } from '../util/xyflowAdapters';
+import { genId } from '../util/idgen';
 import { TableNode } from './TableNode';
 import { RelationEdge } from './RelationEdge';
 import { CardinalityMarkers } from './CardinalityMarkers';
@@ -132,9 +133,10 @@ export function DiagramCanvas() {
   const updateRegionLayout  = useDiagramStore((s) => s.updateRegionLayout);
   const updateCommentLayout = useDiagramStore((s) => s.updateCommentLayout);
   const updateViewport      = useDiagramStore((s) => s.updateViewport);
-  const addRelation        = useDiagramStore((s) => s.addRelation);
-  const selectTable    = useUiStore((s) => s.selectTable);
-  const selectRelation = useUiStore((s) => s.selectRelation);
+  const addRelation         = useDiagramStore((s) => s.addRelation);
+  const selectTable         = useUiStore((s) => s.selectTable);
+  const selectRelation      = useUiStore((s) => s.selectRelation);
+  const setPendingRelation  = useUiStore((s) => s.setPendingRelation);
   const selectRegion   = useUiStore((s) => s.selectRegion);
   const selectComment  = useUiStore((s) => s.selectComment);
   const showMinimap    = useUiStore((s) => s.showMinimap);
@@ -245,7 +247,11 @@ export function DiagramCanvas() {
       };
       const fromColId = extractColId(srcH);
       const toColId   = extractColId(tgtH);
+      const fromCenter = !fromColId || !toColId;
+      // Pre-generate the ID so we can select the relation immediately after adding it
+      const newId = fromCenter ? genId('rel') : undefined;
       addRelation({
+        id:               newId,
         fromTableId:      connection.source ?? '',
         fromColumnId:     fromColId,
         toTableId:        connection.target ?? '',
@@ -257,8 +263,14 @@ export function DiagramCanvas() {
         constraintName:   '',
         comment:          '',
       });
+      // Connection from a center handle → open edit panel immediately and mark as pending
+      // so the panel auto-deletes the relation if closed without column assignment.
+      if (fromCenter && newId) {
+        selectRelation(newId);
+        setPendingRelation(newId);
+      }
     },
-    [addRelation]
+    [addRelation, selectRelation, setPendingRelation]
   );
 
   const handleNodeClick = useCallback(
